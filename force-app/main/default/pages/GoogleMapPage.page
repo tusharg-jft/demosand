@@ -1,0 +1,378 @@
+<apex:page controller="VendorTechnicianController"
+  showHeader="false"
+  sidebar="false"
+  lightningStylesheets="false"
+>
+  <style>
+    /* Remove default browser margins/padding */
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      min-height: 100vh; /* So it stretches full screen vertically */
+      box-sizing: border-box;
+    }
+
+    /* Dropdown Container */
+    .dropdown-container {
+      margin-bottom: 20px;
+    }
+
+    select {
+      padding: 10px 15px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 300px;
+      margin: 0 10px;
+    }
+
+    /* Layout: 70% map, 30% list */
+    .content {
+      display: flex;
+      gap: 20px;
+    }
+
+    #map_canvas {
+      flex: 7;
+      height: 600px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    #technician_list {
+      flex: 3;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      height: 600px;
+      overflow-y: auto;
+      font-size: 18px;
+    }
+
+    /* Technician List Styling */
+    .technician-card {
+      border: 1px solid #eee;
+      border-radius: 4px;
+      padding: 15px; /* increased from 10px */
+      margin-bottom: 15px; /* increased from 10px */
+      background-color: #f9f9f9; /* optional, for a light background */
+    }
+
+    .technician-card h3 {
+      margin: 0 0 8px 0; /* increased bottom margin */
+      font-size: 18px; /* increased from 16px */
+      color: #333;
+    }
+
+    .technician-card .distance {
+      color: #666;
+      font-size: 18px; /* increased from 14px */
+    }
+  </style>
+
+  <script>
+    window.onload = loadScript;
+    let rangeCircle;
+    let technicianMarkers = [];
+    let lines = [];
+    let distanceInfoWindows = [];
+    let map;
+    let vendorMarker;
+    function updateRangeCircle(center, radiusMeters) {
+      // Clear the previous circle if it exists
+      if (rangeCircle) {
+        rangeCircle.setMap(null);
+      }
+      // Create a new circle with blue stroke and light blue fill
+      rangeCircle = new google.maps.Circle({
+        strokeColor: "#0000FF",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: "#0000FF",
+        fillOpacity: 0.1,
+        map: map,
+        center: center,
+        radius: radiusMeters
+      });
+    }
+
+    function updateCircleFromRange() {
+      var rangeSelect = document.getElementById("rangeSelect");
+      var rangeKm = rangeSelect ? parseFloat(rangeSelect.value) : 0;
+      var rangeMeters = rangeKm * 1000; // Convert km to meters
+      if (vendorMarker) {
+        updateRangeCircle(vendorMarker.getPosition(), rangeMeters);
+        // Adjust the map view to fit the circle
+        if (rangeCircle) {
+          map.fitBounds(rangeCircle.getBounds());
+        }
+      }
+    }
+
+    function clearTechnicianMarkers() {
+      technicianMarkers.forEach(function (marker) {
+        marker.setMap(null);
+      });
+      technicianMarkers = [];
+    }
+
+    function clearLines() {
+      lines.forEach(function (line) {
+        line.setMap(null);
+      });
+      lines = [];
+    }
+
+    function clearDistanceInfoWindows() {
+      distanceInfoWindows.forEach(function (infoWindow) {
+        infoWindow.close();
+      });
+      distanceInfoWindows = [];
+    }
+
+    function panToTechnician(lat, lng) {
+      var pos = { lat: lat, lng: lng };
+      map.setCenter(pos);
+      map.setZoom(14);
+    }
+
+    function updateVendorListByRange() {
+      var rangeSelect = document.getElementById("rangeSelect");
+      var selectedRange = parseFloat(rangeSelect.value);
+      var technicianCards = document.querySelectorAll(
+        "#technician_list .technician-card"
+      );
+
+      for (var i = 0; i < technicianCards.length; i++) {
+        var card = technicianCards[i];
+        var distance = parseFloat(card.getAttribute("data-distance"));
+        if (distance <= selectedRange) {
+          card.style.display = "block";
+        } else {
+          card.style.display = "none";
+        }
+      }
+    }
+
+    // Called by the Maps API once the script is loaded
+    function initMap() {
+      // Create map centered over India
+      map = new google.maps.Map(document.getElementById("map_canvas"), {
+        zoom: 5,
+        center: { lat: 20.5937, lng: 78.9629 }
+      });
+
+      // Place a default marker at a hardcoded location (28.645, 77.332)
+      vendorMarker = new google.maps.Marker({
+        position: { lat: 28.645, lng: 77.332 },
+        map: map,
+        title: "Default Vendor Location",
+        icon: "http://maps.google.com/mapfiles/kml/shapes/library_maps.png"
+      });
+    }
+
+    function selectVendor() {
+      // Ensure the map is ready
+      if (!map) {
+        console.error("Map is not initialized yet.");
+        return;
+      }
+
+      var vendorSelect = document.getElementById("vendorSelect");
+      if (!vendorSelect) {
+        console.error("Vendor select element not found.");
+        return;
+      }
+
+      var selectedOption = vendorSelect.options[vendorSelect.selectedIndex];
+      var vendorLocation = selectedOption.getAttribute("data-location");
+      var vendorName = selectedOption.getAttribute("data-name");
+      var vendorId = selectedOption.value;
+
+      // Clear the right-panel technician list
+      document.getElementById("technician_list").innerHTML = "";
+
+      if (vendorLocation) {
+        var coords = vendorLocation.split(",");
+        var lat = parseFloat(coords[0]);
+        var lng = parseFloat(coords[1]);
+        var pos = { lat: lat, lng: lng };
+
+        // Update vendor marker (blue)
+        if (vendorMarker) {
+          vendorMarker.setMap(null);
+        }
+        vendorMarker = new google.maps.Marker({
+          position: pos,
+          map: map,
+          title: vendorName,
+          icon: "http://maps.google.com/mapfiles/kml/shapes/library_maps.png" // Using library icon as building
+        });
+
+        map.setCenter(pos);
+        map.setZoom(12);
+
+        // Clear previous technician markers and lines
+        clearTechnicianMarkers();
+        clearLines();
+        // (Optionally clear any info windows if you have them)
+
+        // Get the selected range from the range dropdown (in km)
+        var rangeSelect = document.getElementById("rangeSelect");
+        var rangeKm = rangeSelect ? parseFloat(rangeSelect.value) : 0;
+        var rangeMeters = rangeKm * 1000; // convert km to meters
+
+        // Update the range circle around the vendor marker
+        updateRangeCircle(pos, rangeMeters);
+
+        // Now call the remote action to get technicians for this vendor
+        if (vendorId) {
+          Visualforce.remoting.Manager.invokeAction(
+            "{!$RemoteAction.VendorTechnicianController.getTechniciansByVendor}",
+            vendorId,
+            function (result, event) {
+              if (event.status && result) {
+                let listHTML = "";
+                result.forEach(function (tech) {
+                  // Parse technician location
+                  var techLat = parseFloat(tech.Location__Latitude__s);
+                  var techLng = parseFloat(tech.Location__Longitude__s);
+                  var techPos = { lat: techLat, lng: techLng };
+
+                  // Create a red marker for the technician
+                  var techMarker = new google.maps.Marker({
+                    position: techPos,
+                    map: map,
+                    title: tech.Name,
+                    icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                  });
+                  technicianMarkers.push(techMarker);
+
+                  // Draw a polyline from vendor marker to technician marker
+                  var line = new google.maps.Polyline({
+                    path: [
+                      vendorMarker.getPosition(),
+                      techMarker.getPosition()
+                    ],
+                    geodesic: true,
+                    strokeColor: "#FF0000",
+                    strokeOpacity: 1.0,
+                    strokeWeight: 2,
+                    map: map
+                  });
+                  lines.push(line);
+
+                  // Calculate distance using the geometry library (in meters)
+                  var distanceInMeters =
+                    google.maps.geometry.spherical.computeDistanceBetween(
+                      vendorMarker.getPosition(),
+                      techMarker.getPosition()
+                    );
+                  var distanceKm = (distanceInMeters / 1000).toFixed(2);
+
+                  // Build technician card with distance info
+                  listHTML += `
+                            <div class="technician-card" data-distance="${distanceKm}" onclick="panToTechnician(${techLat}, ${techLng})">
+                              <h3>${tech.Name}</h3>
+                              <div class="distance">Distance: ${distanceKm} km</div>
+                            </div>
+                            `;
+
+                });
+                document.getElementById("technician_list").innerHTML = listHTML;
+              } else {
+                console.error("Failed to retrieve technicians or none found.");
+                document.getElementById("technician_list").innerHTML =
+                  "No technicians found.";
+              }
+            },
+            { escape: false }
+          );
+        }
+      } else {
+        // If no vendor is selected, reset to default marker/center and clear technicians/lines
+        if (vendorMarker) {
+          vendorMarker.setMap(null);
+        }
+        vendorMarker = new google.maps.Marker({
+          position: { lat: 28.645, lng: 77.332 },
+          map: map,
+          title: "Default Vendor Location",
+          icon: "http://maps.google.com/mapfiles/kml/shapes/library_maps.png"
+        });
+        map.setCenter({ lat: 20.5937, lng: 78.9629 });
+        map.setZoom(5);
+        clearTechnicianMarkers();
+        clearLines();
+        // Clear range circle as well
+        if (rangeCircle) {
+          rangeCircle.setMap(null);
+        }
+        document.getElementById("technician_list").innerHTML = "";
+      }
+    }
+    document.addEventListener("DOMContentLoaded", function () {
+      var rangeSelect = document.getElementById("rangeSelect");
+      if (rangeSelect) {
+        rangeSelect.onchange = function () {
+          updateCircleFromRange();
+          updateVendorListByRange();
+        };
+      }
+    });
+
+    function loadScript() {
+      var script = document.createElement("script");
+      script.type = "text/javascript";
+      script.src =
+        "https://maps.googleapis.com/maps/api/js?key=AIzaSyDVyQvMGkIBhI8p1rrbq_zWqp97QGyAdKI&sensor=false&libraries=geometry&callback=initMap";
+      document.body.appendChild(script);
+    }
+  </script>
+
+  <div class="container">
+    <div class="dropdown-container">
+      <apex:form >
+        <!-- Vendor Dropdown -->
+        <select id="vendorSelect" onchange="selectVendor()">
+          <option value="">-- Select a Vendor --</option>
+          <apex:repeat value="{!vendors}" var="v">
+            <option
+              value="{!v.Id}"
+              data-name="{!JSENCODE(v.Name)}"
+              data-location="{!v.Location__Latitude__s},{!v.Location__Longitude__s}"
+            >
+              {!v.Name}
+            </option>
+          </apex:repeat>
+        </select>
+        <!-- Range Dropdown (functionality to be implemented later) -->
+        <select id="rangeSelect">
+          <option value="10">10 km</option>
+          <option value="20">20 km</option>
+          <option value="50">50 km</option>
+          <option value="100">100 km</option>
+          <option value="200">200 km</option>
+          <option value="500">500 km</option>
+        </select>
+      </apex:form>
+    </div>
+    <div class="content">
+      <div id="map_canvas"></div>
+      <div id="technician_list">
+        <!-- Technician details will be listed here -->
+      </div>
+    </div>
+  </div>
+</apex:page>

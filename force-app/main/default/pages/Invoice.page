@@ -1,0 +1,135 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 03-03-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<apex:page standardController="Invoice__c" extensions="InvoiceController" applyBodyTag="false">
+  <apex:form >
+   <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+    <!-- Header Section -->
+            <div style="background-color: #008000; color: white; padding: 15px; text-align: center; margin-bottom: 20px;">
+                <h1 style="font-size: 16px; margin: 0;">INVOICE</h1>
+                <p style="margin: 5px 0;">Status: {!Invoice__c.Status__c}</p>
+            </div>
+       <!-- Details Section -->
+           <div style="width: 100%; display: table; table-layout: fixed; margin: 10px 0;">
+        <!-- Column 1 -->
+        <div style="display: table-cell; width: 33%; padding: 10px; vertical-align: top; box-sizing: border-box;">
+            <p style="margin: 5px 0;"><strong>Invoice No:</strong> {!Invoice__c.Name}</p>
+        </div>
+        
+        <!-- Column 2 -->
+        <div style="display: table-cell; width: 33%; padding: 10px; vertical-align: top; box-sizing: border-box;">
+            <p style="margin: 5px 0;"><strong>Work Request Info:</strong></p>
+            <p style="margin: 5px 0;"><b>Trade:</b> {!Invoice__c.Work_Order__r.Trade__r.Name}</p>
+            <p style="margin: 5px 0;"><b>Classification:</b> {!Invoice__c.Work_Order__r.Classification__r.Name}</p>
+            <p style="margin: 5px 0;"><b>Issue:</b> {!Invoice__c.Work_Order__r.Issue__r.Name}</p>
+        </div>
+        
+         <!-- Column 3 -->
+        <div style="display: table-cell; width: 33%; padding: 10px; vertical-align: top; box-sizing: border-box;">
+            <p style="margin: 5px 0;"><strong>WO#:</strong> {!Invoice__c.Work_Order__r.WorkOrderNumber}</p>
+            <p style="margin: 5px 0;"><strong>Invoice#:</strong> {!Invoice__c.Name}</p>
+            <p style="margin: 5px 0;"><strong>Date Submitted:</strong> {!TODAY()}</p>
+        </div>
+      </div>
+      
+        <!-- Assessment & Proposal Section -->
+            <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px;">
+                <p style="margin: 5px 0;"><strong>Assessment/Troubleshoot:</strong></p>
+            </div>
+            <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px;">
+                <p style="margin: 5px 0;"><strong>Proposal For Repairs:</strong></p>
+                <p style="margin: 5px 0;">{!Invoice__c.Proposal_For_Repairs__c}</p>
+            </div>
+            
+          <!-- Incurred Section -->
+            <h2 style="font-size: 16px; margin: 20px 0;">Incurred</h2>
+            <div>
+                <p style="margin: 5px 0;"><strong>Labor: </strong>  <apex:outputField value=" {!Invoice__c.Total_labor_Incurred_amount__c}" /></p>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px;">
+                <thead>
+                    <tr>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Quantity</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Technician Quantity</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Details</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Unit Price</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Net Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <apex:repeat value="{!incurredLabor}" var="labor">
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ddd;">{!labor.Quantity__c}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">{!labor.Technician_Quantity__c}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">{!labor.Details__c}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">{!labor.Unit_Price__c}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">{!labor.Net_Price__c}</td>
+                        </tr>
+                    </apex:repeat>
+                </tbody>
+            </table>
+         
+          <!-- Invoice Section -->
+            <h2 style="font-size: 16px; margin: 20px 0;">Invoice</h2>
+            <div>
+                <p style="margin: 5px 0;"><strong>Labor: </strong>  <apex:outputField value=" {!Invoice__c.Total_labor_amount_Invoice__c}" /></p>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px;">
+                <thead>
+                    <tr>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Quantity</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Technician Quantity</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Details</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Unit Price</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Net Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <apex:repeat value="{!InvoiceLabor}" var="labor">
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ddd;">{!labor.Quantity__c}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">{!labor.Technician_Quantity__c}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">{!labor.Details__c}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">{!labor.Unit_Price__c}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">{!labor.Net_Price__c}</td>
+                        </tr>
+                    </apex:repeat>
+                </tbody>
+            </table>      
+               
+          <!-- Totals Section -->
+            <h2 style="font-size: 16px; margin: 20px 0;">Total</h2>
+            <div style="background-color: #000; color: white; padding: 15px; margin-top: 20px; border-radius: 5px;">
+                <table style="width: 100%; border-collapse: collapse; color: white;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 10px; border: 1px solid #444; text-align: left; color: white;">Incurred Costs</th>
+                            <th style="padding: 10px; border: 1px solid #444; text-align: left; color: white;">Invoice Costs</th>
+                            <th style="padding: 10px; border: 1px solid #444; text-align: left; color: white;">Net Total</th>
+                            <th style="padding: 10px; border: 1px solid #444; text-align: left; color: white;">Discount</th>
+                            <th style="padding: 10px; border: 1px solid #444; text-align: left; color: white;">Tax</th>
+                            <th style="padding: 10px; border: 1px solid #444; text-align: left; color: white;">Grand Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #444; color: white;"><apex:outputField value="{!Invoice__c.Total_labor_Incurred_amount__c}" /></td>
+                            <td style="padding: 10px; border: 1px solid #444; color: white;"><apex:outputField value="{!Invoice__c.Total_labor_amount_Invoice__c}" /></td>
+                            <td style="padding: 10px; border: 1px solid #444; color: white;"><apex:outputField value="{!Invoice__c.Net_Total1__c}" /></td>
+                            <td style="padding: 10px; border: 1px solid #444; color: white;"><apex:outputField value="{!Invoice__c.Total_Discount__c}" /></td>
+                            <td style="padding: 10px; border: 1px solid #444; color: white;"><apex:outputField value="{!Invoice__c.Tax_Amount__c}" /></td>
+                            </tr>
+                </tbody>
+            </table>   
+            </div>               
+   </div>
+    <div>
+        <apex:pageMessages id="messages" />
+        <apex:commandButton value="Save as PDF" action="{!saveAsPDF}" style="margin-top: 20px; padding: 10px 20px 10px 20px;" reRender="messages"/> </div> 
+  </apex:form>  
+
+</apex:page>

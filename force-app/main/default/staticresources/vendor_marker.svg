@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Pin base -->
+    <path d="M16 2C10.477 2 6 6.477 6 12C6 19.75 16 30 16 30C16 30 26 19.75 26 12C26 6.477 21.523 2 16 2Z" fill="#FF9A3C"/>
+    <!-- Inner circle -->
+    <circle cx="16" cy="12" r="5" fill="white"/>
+    <!-- Vendor icon (store/shop symbol) -->
+    <path d="M19 10H13L12 11V14.5C12 14.776 12.224 15 12.5 15H19.5C19.776 15 20 14.776 20 14.5V11L19 10Z" fill="#FF9A3C"/>
+    <path d="M13 10V9.5C13 9.224 13.224 9 13.5 9H18.5C18.776 9 19 9.224 19 9.5V10H13Z" fill="#FF9A3C"/>
+</svg>

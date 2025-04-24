@@ -1,0 +1,33 @@
+<template>
+    <div class="slds-form-element">
+        <label class="slds-form-element__label">Brand User</label>
+        <div class="slds-form-element__control">
+            <div class="slds-combobox_container">
+                <div class="slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click slds-is-open">
+                    <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right">
+                        <input type="text"
+                               class="slds-input slds-combobox__input"
+                               placeholder="Search Brand Users..."
+                               onkeyup={handleSearch}
+                               value={searchTerm} />
+                    </div>
+                    <div if:true={users.length} class="slds-dropdown slds-dropdown_length-5 slds-dropdown_fluid">
+                        <ul class="slds-listbox slds-listbox_vertical">
+                            <template for:each={users} for:item="user">
+                                <li key={user.Id} class="slds-listbox__item" onclick={handleSelection} data-id={user.Id}>
+                                    <div class="slds-media slds-listbox__option slds-listbox__option_entity">
+                                        <span class="slds-media__body">
+                                            <span class="slds-listbox__option-text slds-listbox__option-text_entity">
+                                                {user.Name}
+                                            </span>
+                                        </span>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>

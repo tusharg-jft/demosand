@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Select__c</fullName>
+    <label>Select Priority</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>P2 - Priority 2 hours</fullName>
+                <default>false</default>
+                <label>P2 - Priority 2 hours</label>
+            </value>
+            <value>
+                <fullName>P4 - Priority 4 hours</fullName>
+                <default>false</default>
+                <label>P4 - Priority 4 hours</label>
+            </value>
+            <value>
+                <fullName>P8 - Priority 8 hours</fullName>
+                <default>false</default>
+                <label>P8 - Priority 8 hours</label>
+            </value>
+            <value>
+                <fullName>P24 - Priority 24 hours</fullName>
+                <default>false</default>
+                <label>P24 - Priority 24 hours</label>
+            </value>
+            <value>
+                <fullName>P48 - Priority 48 hours</fullName>
+                <default>false</default>
+                <label>P48 - Priority 48 hours</label>
+            </value>
+            <value>
+                <fullName>NP72 - Non Priority 72 hours</fullName>
+                <default>false</default>
+                <label>NP72 - Non Priority 72 hours</label>
+            </value>
+            <value>
+                <fullName>ND8 - Next Day 8 AM</fullName>
+                <default>false</default>
+                <label>ND8 - Next Day 8 AM</label>
+            </value>
+            <value>
+                <fullName>ND10 - Next Day 10 AM</fullName>
+                <default>false</default>
+                <label>ND10 - Next Day 10 AM</label>
+            </value>
+            <value>
+                <fullName>ND2P - Next Day 2 PM</fullName>
+                <default>false</default>
+                <label>ND2P - Next Day 2 PM</label>
+            </value>
+            <value>
+                <fullName>NPW1 - Non Priority 1 Week</fullName>
+                <default>false</default>
+                <label>NPW1 - Non Priority 1 Week</label>
+            </value>
+            <value>
+                <fullName>NPW2 - Non Priority 2 Week</fullName>
+                <default>false</default>
+                <label>NPW2 - Non Priority 2 Week</label>
+            </value>
+            <value>
+                <fullName>NPM1 - Non Priority 1 Month</fullName>
+                <default>false</default>
+                <label>NPM1 - Non Priority 1 Month</label>
+            </value>
+            <value>
+                <fullName>NPM2 - Non Priority 2 Month</fullName>
+                <default>false</default>
+                <label>NPM2 - Non Priority 2 Month</label>
+            </value>
+            <value>
+                <fullName>PSM - Priority- Service - Maintenance 6 Months</fullName>
+                <default>false</default>
+                <label>PSM - Priority- Service - Maintenance 6 Months</label>
+            </value>
+            <value>
+                <fullName>MWO - Material Work Order</fullName>
+                <default>false</default>
+                <label>MWO - Material Work Order</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

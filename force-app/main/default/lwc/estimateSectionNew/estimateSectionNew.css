@@ -1,0 +1,39 @@
+.estimate-section {
+    border: 1px solid #d8dde6;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .estimate-row {
+    display: flex;
+    justify-content: space-between;
+    background-color: #f4f6f9;
+    border-radius: 4px;
+    padding: 8px;
+    margin-top: 8px;
+  }
+  
+  .estimate-field {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .field-label {
+    font-weight: bold;
+  }
+  
+  .field-value {
+    color: #005fb2;
+  }
+  .slds-form-element__label .slds-required {
+    display: none;
+  }
+
+  .asterisk.visible {
+    visibility: visible;
+  }
+  
+  .asterisk.hidden {
+    visibility: hidden;
+  }

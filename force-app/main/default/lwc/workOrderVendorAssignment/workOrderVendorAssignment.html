@@ -1,0 +1,51 @@
+<template>
+    <lightning-card title="Vendor Assignment" icon-name="standard:partner_fund_allocation">
+        <div class="slds-p-around_medium">
+            <!-- Loading spinner -->
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+            </template>
+            
+            <!-- Component disabled message -->
+            <template if:true={isComponentDisabled}>
+                <div class="slds-box slds-theme_warning slds-m-bottom_medium">
+                    <p>{componentMessage}</p>
+                </div>
+            </template>
+            
+            <!-- Vendor list -->
+            <template if:true={hasVendors}>
+                <div class="slds-text-heading_small slds-m-bottom_small">
+                    Select a vendor to assign to this work order (preferred vendors, if any, appear at the top):
+                </div>
+                
+                <div class="slds-m-bottom_medium">
+                    <lightning-datatable
+                        key-field="Id"
+                        data={vendors}
+                        columns={columns}
+                        onrowselection={handleRowSelection}
+                        hide-checkbox-column={isRowSelectionDisabled}
+                        selected-rows={selectedVendorIds}>
+                    </lightning-datatable>
+                </div>
+                
+                <div class="slds-grid slds-grid_align-end">
+                    <lightning-button 
+                        label="Assign Vendor" 
+                        variant="brand" 
+                        onclick={handleAssignVendor}
+                        disabled={isButtonDisabled}>
+                    </lightning-button>
+                </div>
+            </template>
+            
+            <!-- No vendors message -->
+            <template if:false={hasVendors}>
+                <div class="slds-text-align_center slds-m-around_medium">
+                    <p>{noVendorsMessage}</p>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

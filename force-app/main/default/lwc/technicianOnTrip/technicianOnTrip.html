@@ -1,0 +1,32 @@
+<template>
+        <lightning-card title="Add Technician Resources" icon-name="standard:work_order"> 
+            <div class="slds-p-around_medium"> 
+            <!-- Show Datatable if data is present -->
+            <template if:true={fieldResourceData}>
+                <lightning-datatable
+                    key-field="Id"
+                    data={fieldResourceData}
+                    columns={columns}
+                    onrowselection={handleRowSelection}>
+                </lightning-datatable>
+            </template>
+
+            <!-- Show error message if error occurs -->
+            <template if:true={error}>
+                <lightning-card title="Error" icon-name="utility:error">
+                    <p>{error.body.message}</p>
+                </lightning-card>
+            </template>
+
+            <!-- Ass button -->
+            <div class="slds-m-top_large">
+                <lightning-button
+                    variant="brand"
+                    label="Add technician"
+                    onclick={AddTechnician}
+                    class="slds-m-top_medium">
+                </lightning-button>
+            </div> 
+        </div>
+        </lightning-card>
+    </template>

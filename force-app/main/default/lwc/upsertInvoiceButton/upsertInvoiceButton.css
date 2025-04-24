@@ -1,0 +1,150 @@
+/* Modal container styling */
+.slds-modal__container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    max-height: 90vh;
+  }
+  
+  /* Modal header */
+  .slds-modal__header {
+    border-bottom: 1px solid #d8d8d8;
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    font-size: 1.25rem;
+  }
+  
+  /* Section titles */
+  .slds-text-title_bold {
+    font-weight: 600;
+    font-size: 1.1rem;
+    border-bottom: 1px solid #e3e3e3;
+    padding-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Row container */
+  .estimate-row {
+    background-color: #fcfcfc;
+    border-radius: 4px;
+    padding: 0.75rem;
+    border: 1px solid #eee;
+  }
+  
+  /* Summary section boxes */
+  .summary-box {
+    background-color: #f9f9f9;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    padding: 1rem;
+    text-align: center;
+    transition: transform 0.3s ease;
+  }
+  
+  .summary-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .summary-box p {
+    margin: 0.25rem 0;
+  }
+  
+  /* Add/Delete buttons spacing */
+  lightning-button[label="Add"],
+  lightning-button[label="Delete"] {
+    margin-top: 0.5rem;
+  }
+  
+  /* Rich text editor spacing */
+  lightning-input-rich-text {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.5rem;
+    min-height: 80px;
+    background-color: #fff;
+  }
+  
+  /* Input styles */
+  input.slds-input {
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+    font-size: 0.95rem;
+  }
+  
+  /* Capitalize first letter of Estimate type */
+  .custom-capitalize-first::first-letter {
+    text-transform: uppercase;
+  }
+  
+  /* Close button hover effect */
+  .slds-modal__close:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  /* Accordion Section Header */
+  lightning-accordion-section .slds-accordion__summary {
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+    background-color: #f4f6f9;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    border: 1px solid #e1e1e1;
+    transition: background-color 0.2s ease;
+  }
+  
+  lightning-accordion-section .slds-accordion__summary:hover {
+    background-color: #e9ecf3;
+  }
+  
+  /* Accordion Content Area */
+  lightning-accordion-section .slds-accordion__content {
+    padding: 1.25rem 1.5rem;
+    border: 1px solid #e1e1e1;
+    border-radius: 6px;
+    background-color: #fff;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Accordion Section Container */
+  lightning-accordion-section {
+    display: block;
+  }
+  
+  /* Adjust the estimate section inside accordion */
+  .estimate-section {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    font-size: 1rem;
+  }
+  
+  /* Style for accordion section headers */
+  .slds-accordion__summary {
+    font-weight: bold;
+    font-size: 1.05rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+    border: 1px solid #dcdcdc;
+    cursor: pointer;
+  }
+  
+  /* Optional: spacing for the whole accordion */
+  lightning-accordion {
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  
+  
+  /* Responsive columns */
+  @media screen and (max-width: 768px) {
+    .slds-col.slds-size_1-of-2,
+    .slds-col.slds-size_1-of-4 {
+      width: 100% !important;
+    }
+  }

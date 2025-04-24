@@ -1,0 +1,7 @@
+.slds-modal__container {
+  max-width: 60rem;
+}
+.slds-modal__content {
+  max-height: 50vh;
+  overflow-y: auto;
+}

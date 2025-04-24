@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Payment_Type__c</fullName>
+    <label>Payment Type</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>ACH</fullName>
+                <default>false</default>
+                <label>ACH</label>
+            </value>
+            <value>
+                <fullName>Cash</fullName>
+                <default>false</default>
+                <label>Cash</label>
+            </value>
+            <value>
+                <fullName>Credit Card</fullName>
+                <default>false</default>
+                <label>Credit Card</label>
+            </value>
+            <value>
+                <fullName>Net Terms</fullName>
+                <default>false</default>
+                <label>Net Terms</label>
+            </value>
+            <value>
+                <fullName>Paypal</fullName>
+                <default>false</default>
+                <label>Paypal</label>
+            </value>
+            <value>
+                <fullName>Wire</fullName>
+                <default>false</default>
+                <label>Wire</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -1,0 +1,34 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 02-17-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<template>
+    <lightning-card title="Bulk Status Update" icon-name="standard:record">
+        
+        <!-- Datatable to Show Records -->
+        <lightning-datatable
+            key-field="Id"
+            data={records}
+            columns={columns}
+            onrowselection={handleRowSelection}>
+        </lightning-datatable>
+        
+        <!-- Status Picklist -->
+        <lightning-combobox
+            label="Select Status"
+            options={statusOptions}
+            value={selectedStatus}
+            onchange={handleStatusChange}>
+        </lightning-combobox>
+
+        <!-- Buttons -->
+        <div class="slds-m-top_medium">
+            <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}></lightning-button>
+            <lightning-button variant="brand" label="Update Status" onclick={updateStatus} class="slds-m-left_small" disabled={isUpdateDisabled}></lightning-button>
+        </div>
+        
+    </lightning-card>
+</template>

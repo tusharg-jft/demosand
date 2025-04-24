@@ -1,0 +1,8 @@
+<template>
+    <!-- <p>Record Id: {recordId}</p> -->
+    <lightning-button label="Edit Estimate" onclick={handleOpenModal}></lightning-button>
+    <template if:true={showModal}>
+      <c-edit-estimate-modal rec={recordId} lwc:ref="editestimatemodal" onclose={handleCloseModal} onsave={handleSave}></c-edit-estimate-modal>
+    </template>
+  
+  </template>

@@ -1,0 +1,682 @@
+<apex:page controller="WorkOrderMapController">
+  <apex:includeScript value="/soap/ajax/41.0/connection.js" />
+  <!-- Include Google Maps API -->
+  <apex:includeScript value="https://maps.googleapis.com/maps/api/js?key=AIzaSyDVyQvMGkIBhI8p1rrbq_zWqp97QGyAdKI&libraries=geometry"
+  />
+
+  <style>
+    .filter-container {
+      gap: 20px; /* Spacing between each filter */
+      align-items: center;
+      margin: 20px 0; /* Spacing above/below the row */
+      justify-content: space-between;
+    }
+
+    .filter-row-1 {
+      margin-bottom: 10px; /* Space between rows */
+      display: flex;
+      flex-wrap: wrap; /* Allow wrapping for smaller screens */
+      justify-content: space-between; /* Center the filters */
+    }
+
+    .filter-row-2 {
+      display: flex;
+      flex-wrap: wrap; /* Allow wrapping for smaller screens */
+      justify-content: space-between; /* Center the filters */
+    }
+
+    .filter-row-1 select,
+    .filter-row-1 input {
+      width: 23%;
+    }
+
+    .filter-row-2 select {
+      width: 48%;
+    }
+
+    /* Shared styles for both input and select elements */
+    .filter-container input,
+    .filter-container select {
+      height: 36px;
+      min-width: 160px; /* Adjust as needed */
+      padding: 0 12px;
+      font-size: 14px;
+      color: #333;
+      border: 1px solid #d8dde6; /* Light gray border */
+      border-radius: 4px;
+      background-color: #fff;
+      box-sizing: border-box;
+    }
+
+    /* Placeholder text styling for the input */
+    .filter-container input::placeholder {
+      color: #999;
+    }
+
+    /* (Optional) Hover and focus states to mimic Lightning styling */
+    .filter-container input:hover,
+    .filter-container select:hover {
+      border-color: #b6bfc9; /* Slightly darker gray on hover */
+    }
+
+    .filter-container input:focus,
+    .filter-container select:focus {
+      outline: none;
+      border-color: #0070d2; /* Salesforce blue on focus */
+      box-shadow: 0 0 0 1px #0070d2;
+    }
+    /* Centering the toggle container */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px; /* Space between labels and toggle */
+      margin: 20px 0;
+    }
+
+    /* Labels (List View, Map View) */
+    .toggle-label {
+      font-size: 16px;
+      color: #333;
+    }
+
+    /* Toggle switch container */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    /* Hide the default checkbox */
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    /* Slider */
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 24px;
+    }
+
+    /* The slider knob */
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 4px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+
+    /* When checkbox is checked, change background color */
+    .toggle-switch input:checked + .slider {
+      background-color: #4a90e2; /* Blue color */
+    }
+
+    /* Move slider knob when checked */
+    .toggle-switch input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    .info-window {
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      max-width: 250px;
+    }
+
+    .site-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .work-order-card {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 5px 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .work-order-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    .work-order-title:hover {
+      text-decoration: underline;
+    }
+
+    .work-order-trade {
+      font-size: 12px;
+      color: #333;
+      margin-top: 5px;
+    }
+    .hidden {
+      display: none;
+    }
+    #map_canvas {
+      height: 600px;
+      width: 100%;
+    }
+    .filter-container label {
+      margin-right: 5px;
+    }
+    .filter-container select {
+      margin-right: 20px;
+    }
+    #legend {
+      font-family: Arial, sans-serif;
+      background: #fff;
+      padding: 10px;
+      margin: 10px;
+      border: 3px solid #000;
+    }
+  </style>
+
+  <script>
+    // Global variables for Google Map and markers
+
+    var rangeCircle;
+    var siteMarker;
+    var map;
+    var workOrderMarkers = [];
+    var initialMapCenter = { lat: 39.5, lng: -98.35 }; // Center of USA
+    var initialZoom = 5; // Default zoom level
+    var currentInfoWindow = null;
+    var vendorInfoWindow = null;
+    var vendorMarkers = [];
+
+    // Function to toggle between List and Map views
+    function toggleView(view) {
+      if (view === "list") {
+        document.getElementById("listView").classList.remove("hidden");
+        document.getElementById("mapView").classList.add("hidden");
+      } else {
+        document.getElementById("listView").classList.add("hidden");
+        document.getElementById("mapView").classList.remove("hidden");
+        // Initialize map if not already initialized
+        if (!map) {
+          initMap();
+        }
+      }
+    }
+
+    // Initialize Google Map; you can integrate your existing map component logic here
+    function initMap() {
+      // Example: center map on a default location; you could also pass a specific work order location
+      var defaultCenter = { lat: 39.5, lng: -98.35 }; // Center of USA
+      map = new google.maps.Map(document.getElementById("map_canvas"), {
+        zoom: 5,
+        center: defaultCenter
+      });
+
+      map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(
+        document.getElementById("legend")
+      );
+      // Once map is loaded, call a function to load the initial markers (if needed)
+      loadWorkOrderMarkers();
+    }
+
+    // Function to load markers on the map based on work orders and filters
+    function loadWorkOrderMarkers() {
+      // Clear existing markers
+      clearVendorMarkers();
+      if (rangeCircle) {
+        rangeCircle.setMap(null);
+      }
+      workOrderMarkers.forEach(function (marker) {
+        marker.setMap(null);
+      });
+      workOrderMarkers = [];
+
+      // Retrieve filter values
+      var zip = document.getElementById("zipcodeFilter").value;
+      var state = document.getElementById("stateFilter").value;
+      var county = document.getElementById("countyFilter").value;
+      var city = document.getElementById("cityFilter").value;
+
+      if (state === "Select State...") {
+        state = "";
+      }
+      if (county === "Select Country...") {
+        county = "";
+      }
+      if (city === "Select City...") {
+        city = "";
+      }
+      if (zip === "") {
+        zip = "";
+      }
+
+      console.log("Filter Values: ", {
+        zip: zip,
+        state: state,
+        county: county,
+        city: city
+      });
+
+      // Call Apex remoting or use a JavaScript/AJAX call to fetch filtered work orders
+      Visualforce.remoting.Manager.invokeAction(
+        "{!$RemoteAction.WorkOrderMapController.getFilteredWorkOrders}",
+        zip,
+        state,
+        county,
+        city,
+        function (result, event) {
+          console.log("Event: ", event);
+
+          // Clear previous markers
+          workOrderMarkers.forEach((marker) => marker.setMap(null));
+          workOrderMarkers = [];
+
+          if (!result || Object.keys(result).length === 0) {
+            console.warn("No sites found for the given filters.");
+            map.setCenter(initialMapCenter);
+            map.setZoom(initialZoom);
+            return;
+          }
+
+          if (event.status) {
+            console.log("Filtered Sites with Work Orders: ", result);
+
+            var sites =
+              typeof result === "string" ? JSON.parse(result) : result;
+            var bounds = new google.maps.LatLngBounds();
+
+            for (let siteId in sites) {
+              let site = sites[siteId];
+
+              if (site.Latitude && site.Longitude) {
+                let pos = {
+                  lat: parseFloat(site.Latitude),
+                  lng: parseFloat(site.Longitude)
+                };
+
+                // Create work order cards
+                let workOrdersList = site.WorkOrders.map(
+                  (wo) => `
+              <div class="work-order-card">
+                <a href="/${wo.Id}" class="work-order-title">Work Order #${wo.Name}</a>
+                <p class="work-order-trade"><strong>Trade:</strong>${wo.Trade}</p>
+              </div>
+            `
+                ).join("");
+
+                let infoContent = `
+            <div class="info-window">
+              <h3 class="site-title">${site.SiteName}</h3>
+              ${workOrdersList}
+            </div>
+          `;
+
+                let infoWindow = new google.maps.InfoWindow({
+                  content: infoContent
+                });
+
+                let marker = new google.maps.Marker({
+                  position: pos,
+                  map: map,
+                  title: site.SiteName,
+                  icon: "https://maps.google.com/mapfiles/kml/shapes/buildings.png"
+                });
+
+                marker.addListener("click", function () {
+                  infoWindow.open(map, marker);
+                  // Close any currently open info window
+                  if (currentInfoWindow) {
+                    currentInfoWindow.close();
+                  }
+                  // Optionally, call an Apex function when a site is clicked
+                  Visualforce.remoting.Manager.invokeAction(
+                    "{!$RemoteAction.WorkOrderMapController.getVendorsForSite}",
+                    siteId,
+                    function (result, event) {
+                      console.log("Site click processed:", result);
+                    }
+                  );
+                  loadVendorMarkers(siteId, pos.lat, pos.lng);
+                  siteMarker = marker;
+                  siteMarker.position = { lat: pos.lat, lng: pos.lng };
+                  updateCircleFromRange();
+                });
+
+                workOrderMarkers.push(marker);
+                bounds.extend(pos);
+              } else {
+                console.warn(
+                  "Skipping site due to missing coordinates: ",
+                  site
+                );
+              }
+            }
+
+            if (!bounds.isEmpty()) {
+              map.fitBounds(bounds);
+            }
+          } else {
+            console.error("Error retrieving filtered work orders", event);
+          }
+        },
+        { escape: false }
+      );
+    }
+
+    // Trigger marker reload when any dropdown value changes
+    function filterWorkOrders() {
+      loadWorkOrderMarkers();
+    }
+
+    // New function: Clear vendor markers (and any lines, if used)
+    function clearVendorMarkers() {
+      if (vendorMarkers && vendorMarkers.length > 0) {
+        vendorMarkers.forEach(function (markerOrLine) {
+          markerOrLine.setMap(null);
+        });
+      }
+      vendorMarkers = [];
+    }
+
+    // New function: Load vendor markers for a given site
+    function loadVendorMarkers(siteId, siteLat, siteLng) {
+      // Clear any existing vendor markers
+      clearVendorMarkers();
+
+      Visualforce.remoting.Manager.invokeAction(
+        "{!$RemoteAction.WorkOrderMapController.getVendorsForSite}",
+        siteId,
+        function (result, event) {
+          if (event.status && result) {
+            var vendors =
+              typeof result === "string" ? JSON.parse(result) : result;
+            var localVendors = vendors.localVendors;
+            var googleVendors = vendors.googleVendors;
+            console.log("Local Vendors: ", localVendors);
+            console.log("Google Vendors: ", googleVendors);
+            localVendors.forEach(function (vendor) {
+              if (vendor.Latitude && vendor.Longitude) {
+                var vendorPos = {
+                  lat: parseFloat(vendor.Latitude),
+                  lng: parseFloat(vendor.Longitude)
+                };
+
+                // Create a vendor marker with a different icon (e.g., red)
+                var vendorMarker = new google.maps.Marker({
+                  position: vendorPos,
+                  map: map,
+                  title: vendor.Name,
+                  icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                  trade: vendor.Trade
+                });
+                vendorMarkers.push(vendorMarker);
+
+                vendorInfoWindow = new google.maps.InfoWindow();
+                vendorMarker.addListener("click", function () {
+                  let content = ` 
+                    <div class="info-window" style="font-family: Arial, sans-serif; padding: 10px; max-width: 250px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <h3 class="site-title" style="font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #007bff;">${vendor.Name}</h3>
+                    <p style="font-size: 14px; color: #333; margin: 5px 0;"><strong>Trade:</strong> ${vendor.Trade}</p>
+                    <p style="font-size: 14px; color: #333; margin: 5px 0;"><strong>Distance from Site:</strong> ${vendor.Distance} km</p>
+                    </div>
+                    `;
+
+                  vendorInfoWindow.setContent(content);
+                  vendorInfoWindow.open(map, vendorMarker);
+                });
+
+                // Optionally, draw a line from the site to the vendor
+                var line = new google.maps.Polyline({
+                  path: [{ lat: siteLat, lng: siteLng }, vendorPos],
+                  geodesic: true,
+                  strokeColor: "#0000FF",
+                  strokeOpacity: 1.0,
+                  strokeWeight: 2,
+                  map: map,
+                  trade: vendor.Trade
+                });
+                vendorMarkers.push(line);
+              }
+            });
+            googleVendors.forEach(function (vendor) {
+              if (vendor.Latitude && vendor.Longitude) {
+                var vendorPos = {
+                  lat: parseFloat(vendor.Latitude),
+                  lng: parseFloat(vendor.Longitude)
+                };
+
+                // Create a vendor marker with a different icon (e.g., red)
+                var vendorMarker = new google.maps.Marker({
+                  position: vendorPos,
+                  map: map,
+                  title: vendor.Name,
+                  icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                  trade: vendor.Trade
+                });
+                vendorMarker.trade = vendor.Trade;
+                vendorMarkers.push(vendorMarker);
+
+                vendorInfoWindow = new google.maps.InfoWindow();
+                vendorMarker.addListener("click", function () {
+                  let content = ` 
+                    <div class="info-window" style="font-family: Arial, sans-serif; padding: 10px; max-width: 250px;  border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <h3 class="site-title" style="font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #007bff;">${vendor.Name}</h3>
+                    <p style="font-size: 14px; color: #333; margin: 5px 0;"><strong>Trade:</strong> ${vendor.Trade}</p>
+                    <p style="font-size: 14px; color: #333; margin: 5px 0;"><strong>Distance from Site:</strong> ${vendor.Distance}</p>
+                    </div>
+                    `;
+
+                  vendorInfoWindow.setContent(content);
+                  vendorInfoWindow.open(map, vendorMarker);
+                });
+
+                // Optionally, draw a line from the site to the vendor
+                var line = new google.maps.Polyline({
+                  path: [{ lat: siteLat, lng: siteLng }, vendorPos],
+                  geodesic: true,
+                  strokeColor: "#FF0000",
+                  strokeOpacity: 1.0,
+                  strokeWeight: 2,
+                  map: map,
+                  trade: vendor.Trade
+                });
+                vendorMarkers.push(line);
+              }
+            });
+            // console.log("Vendor markers loaded: ", vendorMarkers);
+          } else {
+            console.error("Error retrieving vendor markers", event);
+          }
+        },
+        { escape: false }
+      );
+    }
+
+    // Function to update the range circle on the map
+    function updateCircleFromRange() {
+      var rangeSelect = document.getElementById("rangeSelect");
+      var rangeKm = rangeSelect ? parseFloat(rangeSelect.value) : 0;
+      var rangeMeters = rangeKm * 1000;
+      if (siteMarker) {
+        console.log("site marker position: ", siteMarker.getPosition());
+        updateRangeCircle(siteMarker.getPosition(), rangeMeters);
+        if (rangeCircle) {
+          map.fitBounds(rangeCircle.getBounds());
+        }
+      }
+    }
+
+    // Draws/updates the range circle around the site marker
+    function updateRangeCircle(center, radiusMeters) {
+      if (rangeCircle) {
+        rangeCircle.setMap(null);
+      }
+      if (!center || !radiusMeters) {
+        rangeCircle.setMap(null);
+        return;
+      }
+      console.log("inside the updateRangeCircle function");
+      console.log("Center: ", center);
+      console.log("Radius (meters): ", radiusMeters);
+      rangeCircle = new google.maps.Circle({
+        strokeColor: "#0000FF",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: "#0000FF",
+        fillOpacity: 0.1,
+        map: map,
+        center: center,
+        radius: radiusMeters
+      });
+    }
+
+    // Function to update the vendors on the basis of the selected trade
+    function updateVendorsByTrade() {
+      var tradeSelect = document.getElementById("tradeFilter");
+      var selectedTrade = tradeSelect
+        ? tradeSelect.options[tradeSelect.selectedIndex].text
+        : "";
+
+      console.log("Selected Trade:", selectedTrade);
+
+      vendorMarkers.forEach(function (markerOrLine) {
+        const isMarker = markerOrLine instanceof google.maps.Marker;
+        const isPolyline = markerOrLine instanceof google.maps.Polyline;
+
+        // Show all if nothing or "All" is selected
+        if (!selectedTrade || selectedTrade === "Select Trade...") {
+          markerOrLine.setMap(map);
+        }
+        // Else, show only if trade matches
+        else {
+          if (
+            (isMarker || isPolyline) &&
+            markerOrLine.trade === selectedTrade
+          ) {
+            markerOrLine.setMap(map); // Show matching
+          } else {
+            markerOrLine.setMap(null); // Hide non-matching
+          }
+        }
+      });
+    }
+
+    // Wait for DOM content to be loaded before attaching event listeners
+    document.addEventListener("DOMContentLoaded", function () {
+      // Attach onchange events to each filter dropdown
+      document.getElementById("zipcodeFilter").onchange = filterWorkOrders;
+      document.getElementById("stateFilter").onchange = filterWorkOrders;
+      document.getElementById("countyFilter").onchange = filterWorkOrders;
+      document.getElementById("cityFilter").onchange = filterWorkOrders;
+      document.getElementById("tradeFilter").onchange = updateVendorsByTrade;
+
+      // Attach event listener to the toggle switch
+      document
+        .getElementById("toggleView")
+        .addEventListener("change", function () {
+          if (this.checked) {
+            toggleView("map");
+            console.log("Map View Enabled");
+          } else {
+            toggleView("list");
+            console.log("List View Enabled");
+          }
+        });
+    });
+  </script>
+
+  <div class="toggle-container">
+    <span class="toggle-label">List View</span>
+    <label class="toggle-switch">
+      <input type="checkbox" id="toggleView" />
+      <span class="slider"></span>
+    </label>
+    <span class="toggle-label">Map View</span>
+  </div>
+
+  <!-- List View Section -->
+  <div id="listView">
+    <apex:pageBlock >
+      <apex:pageBlockTable value="{!workOrders}" var="wo" styleClass="myTable">
+        <apex:column headerValue="Work Order Name" value="{!wo.Name}" />
+        <apex:column headerValue="Status" value="{!wo.Status__c}" />
+        <apex:column headerValue="Site Name" value="{!wo.Sites__r.Name}" />
+      </apex:pageBlockTable>
+    </apex:pageBlock>
+  </div>
+
+  <!-- Map View Section -->
+  <div id="mapView" class="hidden">
+    <!-- Filter Row Container -->
+    <div class="filter-container">
+      <!-- Zip Code Text Input -->
+      <div class="filter-row-1">
+        <input type="text" id="zipcodeFilter" placeholder="Zip Code" />
+
+        <select id="countyFilter">
+          <option value="">Select Country...</option>
+          <apex:repeat value="{!countryOptions}" var="country">
+            <option value="{!country.value}">{!country.label}</option>
+          </apex:repeat>
+        </select>
+
+        <select id="stateFilter">
+          <option value="">Select State...</option>
+          <apex:repeat value="{!stateOptions}" var="state">
+            <option value="{!state.value}">{!state.label}</option>
+          </apex:repeat>
+        </select>
+
+        <!-- City Picklist -->
+        <select id="cityFilter">
+          <option value="">Select City...</option>
+          <option value="Noida">Noida</option>
+          <option value="Delhi">Delhi</option>
+          <option value="Mumbai">Mumbai</option>
+          <option value="Bengaluru">Bengaluru</option>
+          <option value="Chennai">Chennai</option>
+          <option value="Hyderabad">Hyderabad</option>
+          <option value="Kolkata">Kolkata</option>
+          <option value="Pune">Pune</option>
+          <option value="Ahmedabad">Ahmedabad</option>
+          <option value="Jaipur">Jaipur</option>
+        </select>
+      </div>
+
+      <div class="filter-row-2">
+        <!-- Trade Dropdown -->
+        <select id="tradeFilter">
+          <option value="">Select Trade...</option>
+          <apex:repeat value="{!tradeOptions}" var="trade">
+            <option value="{!trade.value}">{!trade.label}</option>
+          </apex:repeat>
+        </select>
+
+        <!-- Range Dropdown (retained as before) -->
+        <select id="rangeSelect" onchange="updateCircleFromRange()">
+          <option value="">-- Select Range --</option>
+          <apex:repeat value="{!rangeOptions}" var="rs">
+            <option value="{!rs.value}">{!rs.value} km</option>
+          </apex:repeat>
+        </select>
+      </div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map_canvas">
+      <div id="legend"><h3>Legend</h3></div>
+    </div>
+  </div></apex:page>

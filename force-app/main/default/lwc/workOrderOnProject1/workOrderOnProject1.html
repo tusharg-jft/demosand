@@ -1,0 +1,81 @@
+<template>
+    <lightning-card title="Assign Work Orders to Project" icon-name="standard:work_order">
+                <div class="slds-m-bottom_medium slds-p-bottom-small"> 
+            <lightning-input 
+                label="" 
+                value={searchQuery} 
+                onchange={handleSearchChange} 
+                placeholder="Search by Work Order Number...">
+            </lightning-input>
+        </div>
+        <template if:true={visibleWorkOrders}>
+            <lightning-datatable
+                key-field="Id"
+                data={visibleWorkOrders}
+                columns={columns}
+                hide-checkbox-column
+                oncellchange={handleCellChange}>
+            </lightning-datatable>
+        </template>
+
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading"></lightning-spinner>
+        </template>
+
+        <template if:true={error}>
+            <p class="slds-text-color_error">{error}</p>
+        </template>
+
+        <!-- View More Link -->
+        <template if:true={showViewMore}>
+            <div class="slds-m-top_medium slds-align_absolute-center">
+                <a href="javascript:void(0);" onclick={handleViewMore} class="slds-text-link">View More</a>
+            </div>
+        </template>
+
+        <template if:true={isAnyChangeMade}>
+            <div class="slds-button-group slds-m-top_medium slds-align_absolute-center">
+                <lightning-button label="Cancel" onclick={handleCancel} variant="neutral" class="slds-m-right_medium"></lightning-button>
+                <lightning-button label="Submit" onclick={handleAdd} variant="brand"></lightning-button>
+            </div>
+        </template>
+    </lightning-card>
+</template>
+
+
+
+<!--<template>
+    <lightning-card title="Assign Work Orders to Project" icon-name="standard:work_order">
+        <div class="slds-m-bottom_medium">
+            <lightning-input 
+                label="Search Work Order Number" 
+                value={searchQuery} 
+                onchange={handleSearchChange} 
+                placeholder="Search by Work Order Number...">
+            </lightning-input>
+        </div>
+
+        <template if:true={workOrders}>
+            <lightning-datatable
+                key-field="Id"
+                data={workOrders}
+                columns={columns}
+                hide-checkbox-column=""
+                oncellchange={handleCellChange}>
+            </lightning-datatable>
+        </template>
+
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading"></lightning-spinner>
+        </template>
+
+        <template if:true={error}>
+            <p class="slds-text-color_error">{error}</p>
+        </template>
+
+        <div class="slds-button-group slds-m-top_medium">
+            <lightning-button label="Cancel" onclick={handleCancel} variant="neutral" class="slds-m-right_medium"></lightning-button>
+            <lightning-button label="Submit" onclick={handleAdd} variant="brand"></lightning-button>
+        </div>
+    </lightning-card>
+</template> -->

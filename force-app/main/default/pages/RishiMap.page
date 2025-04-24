@@ -1,0 +1,45 @@
+<apex:page standardController="Account" showHeader="true">
+    <style>
+        #map_canvas {
+            width: 500px;
+            height: 400px;
+        }
+    </style>
+
+    <script>
+        function initialize() {
+            var latlng = new google.maps.LatLng(28.645,  77.332);
+            var myOptions = {
+                zoom: 15,
+                center: latlng,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            var map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+
+            var marker = new google.maps.Marker({
+                position: latlng,
+                map: map,
+                title: "{!Account.Name}"
+            });
+        }
+
+        function loadScript() {
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDVyQvMGkIBhI8p1rrbq_zWqp97QGyAdKI&sensor=false&callback=initialize';
+            document.body.appendChild(script);
+        }
+
+        window.onload = loadScript;
+
+    </script>
+
+    <apex:pageBlock title="Google Map">
+        <apex:pageBlockSection >
+            <div id="map_canvas"></div>
+            <apex:outputText value="Billing Address: {!Account.BillingStreet}, {!Account.BillingCity}, {!Account.BillingState}, {!Account.BillingPostalCode}, {!Account.BillingCountry}" />
+        </apex:pageBlockSection>
+
+    </apex:pageBlock>
+
+</apex:page>

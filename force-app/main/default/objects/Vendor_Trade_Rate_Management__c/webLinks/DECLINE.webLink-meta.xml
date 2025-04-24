@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WebLink xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DECLINE</fullName>
+    <availability>online</availability>
+    <displayType>button</displayType>
+    <linkType>javascript</linkType>
+    <masterLabel>DECLINE</masterLabel>
+    <openType>onClickJavaScript</openType>
+    <protected>false</protected>
+    <url>{!REQUIRESCRIPT(&quot;/soap/ajax/52.0/connection.js&quot;)} // Include the Salesforce AJAX Toolkit
+
+var vtrmRecordId = &apos;{!Vendor_Trade_Rate_Management__c.Id}&apos;; // Get the record ID
+var vtrmRecord = new sforce.SObject(&quot;Vendor_Trade_Rate_Management__c&quot;); // Create a new SObject for VTRM
+vtrmRecord.Id = vtrmRecordId; // Set the record ID
+
+vtrmRecord.Status__c = &apos;Declined&apos;; // Update the Status field to &quot;Declined&quot;
+
+var result = sforce.connection.update([vtrmRecord]); // Update the record in Salesforce
+
+if (result[0].success == &apos;true&apos;) {
+    alert(&quot;Record successfully declined.&quot;);
+    location.reload(); // Reload the page to reflect the changes
+} else {
+    alert(&quot;An error occurred while declining the record: &quot; + result[0].errors.message);
+}</url>
+</WebLink>

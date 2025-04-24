@@ -1,0 +1,37 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 04-09-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<template>
+    <lightning-card title="External Vendors" icon-name="standard:location">
+        <div class="slds-p-around_medium">
+            <template if:true={externalVendors}>
+                <lightning-datatable
+                    key-field="place_id"
+                    data={externalVendors}
+                    columns={externalColumns}
+                    onrowselection={handleRowSelection}>
+                </lightning-datatable>
+            </template>
+            <template if:true={error}>
+                <p class="slds-text-color_error">{error}</p>
+            </template>
+            <template if:false={externalVendors}>
+                <p>No external vendors found.</p>
+            </template>
+        </div>
+        <div slot="footer" class="slds-grid slds-grid_align-end">
+            <template if:true={selectedVendor}>
+                <lightning-button 
+                    variant="brand"
+                    label="Assign Vendor" 
+                    onclick={handleAssignVendor}
+                    class="slds-m-right_small slds-m-bottom_small">
+                </lightning-button>
+            </template>
+        </div>
+    </lightning-card>
+</template>

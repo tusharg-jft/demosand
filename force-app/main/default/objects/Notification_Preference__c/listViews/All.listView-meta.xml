@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>All</fullName>
+    <columns>NAME</columns>
+    <columns>Applicable_Profiles__c</columns>
+    <columns>Email_Notification__c</columns>
+    <columns>Push_Notification__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Applicable_Profiles__c</field>
+        <operation>includes</operation>
+        <value>FM - Site user</value>
+    </filters>
+    <label>All</label>
+</ListView>

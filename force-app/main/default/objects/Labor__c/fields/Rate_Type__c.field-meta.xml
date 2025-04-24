@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Rate_Type__c</fullName>
+    <label>Rate Type</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Regular Rate</fullName>
+                <default>false</default>
+                <label>Regular Rate</label>
+            </value>
+            <value>
+                <fullName>After Hour Rate</fullName>
+                <default>false</default>
+                <label>After Hour Rate</label>
+            </value>
+            <value>
+                <fullName>Weekend Rate</fullName>
+                <default>false</default>
+                <label>Weekend Rate</label>
+            </value>
+            <value>
+                <fullName>Holiday Rate</fullName>
+                <default>false</default>
+                <label>Holiday Rate</label>
+            </value>
+            <value>
+                <fullName>Emergency Rate</fullName>
+                <default>false</default>
+                <label>Emergency Rate</label>
+            </value>
+            <value>
+                <fullName>Weekend Emergency rate</fullName>
+                <default>false</default>
+                <label>Weekend Emergency rate</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

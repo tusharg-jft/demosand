@@ -1,0 +1,72 @@
+/* PDF container styles */
+.pdf-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.pdf-frame {
+    width: 100%;
+    max-width: 950px;
+    height: 600px;
+    border: none;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom table styles */
+.slds-scrollable {
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+
+/* Table row hover and selection styles */
+.slds-table tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.slds-table tbody tr:hover {
+    background-color: #f3f2f2;
+}
+
+.slds-table tbody tr.selected {
+    background-color: #eef1f6;
+}
+
+/* Ensure table cells have proper padding and alignment */
+.slds-table td, .slds-table th {
+    padding: 0.5rem 0.75rem;
+    white-space: nowrap;
+}
+
+/* Make sure currency values are right-aligned */
+.slds-table td .slds-truncate {
+    text-align: left;
+}
+
+.slds-table td:nth-child(4) .slds-truncate,
+.slds-table td:nth-child(5) .slds-truncate,
+.slds-table td:nth-child(6) .slds-truncate {
+    text-align: right;
+}
+
+/* Style for action buttons container */
+.slds-button-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+    .slds-button-group {
+        flex-direction: column;
+    }
+    
+    .slds-button-group lightning-button {
+        margin-bottom: 0.25rem;
+    }
+}

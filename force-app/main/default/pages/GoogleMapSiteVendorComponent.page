@@ -1,0 +1,526 @@
+<apex:page standardController="Work_Order__c"
+  extensions="GoogleMapSiteVendorComponent"
+  showHeader="false"
+  sidebar="false"
+  lightningStylesheets="false"
+>
+  <style>
+    /* Basic reset and container styles */
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .dropdown-container {
+      margin-bottom: 20px;
+    }
+    select {
+      padding: 10px 15px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 300px;
+      margin: 0 10px;
+    }
+    /* Layout: 70% map, 30% vendor list */
+    .content {
+      display: flex;
+      gap: 20px;
+    }
+    #map_canvas {
+      flex: 7;
+      height: 600px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    #vendor_list {
+      flex: 3;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      height: 600px;
+      overflow-y: auto;
+      font-size: 18px;
+    }
+    /* Vendor List Card Styling */
+    .technician-card {
+      display: flex;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background-color: #f9f9f9;
+      cursor: pointer;
+    }
+    .technician-card h3 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      color: #333;
+    }
+    .technician-card .distance {
+      color: #666;
+      font-size: 18px;
+    }
+    #vendorSelect {
+      width: 50%;
+    }
+    #rangeSelect {
+      width: 50%;
+    }
+    .dropdown-form {
+      display: flex;
+      justify-content: center;
+    }
+    .vendor-heading-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .vendor-heading {
+      font-size: 20px;
+      color: #333;
+    }
+    .vendor-heading-container {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .gm-ui-hover-effect {
+      display: none !important;
+    }
+  </style>
+
+  <script>
+    window.onload = loadScript;
+    let rangeCircle;
+    let vendorMarkers = [];
+    let lines = [];
+    let map;
+    let siteMarker;
+
+    function fetchNearbyVendors() {
+      var siteLat = parseFloat("{!site.Location__Latitude__s}");
+      var siteLng = parseFloat("{!site.Location__Longitude__s}");
+      var tradeName = "{!JSENCODE(workOrder.Trade__r.Name)}"; // Use the trade name from the lookup
+
+      // console.log(
+      //   "Fetching vendors for site at " +
+      //     siteLat +
+      //     ", " +
+      //     siteLng +
+      //     " and trade: " +
+      //     tradeName
+      // );
+
+      Visualforce.remoting.Manager.invokeAction(
+        "{!$RemoteAction.GoogleMapSiteVendorComponent.getNearbyVendors}",
+        siteLat,
+        siteLng,
+        tradeName,
+        function (result, event) {
+          // console.log("Vendor data received:", result);
+          if (event.status && result) {
+            try {
+              var data = JSON.parse(result);
+              var vendors = data.results.slice(0, 10); // Limit to 10 vendors
+
+              // Get the sidebar list element
+              let vendorListDiv = document.getElementById("vendor_list");
+
+              vendors.forEach(function (vendor) {
+                var vLat = vendor.geometry.location.lat;
+                var vLng = vendor.geometry.location.lng;
+                var vendorLatLng = new google.maps.LatLng(vLat, vLng);
+                // Use the distance computed in Apex (already added to the vendor object)
+                var distance = vendor.distance;
+
+                // Create a blue marker for the vendor on the map.
+                var marker = new google.maps.Marker({
+                  position: vendorLatLng,
+                  map: map,
+                  title: vendor.name,
+                  icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                });
+
+                let infoWindow = new google.maps.InfoWindow();
+                marker.addListener("mouseover", function () {
+                  let content = `
+            <div style="font-family: Arial, sans-serif; font-size: 14px;">
+              <h3>${vendor.name}</h3>
+              <p>Address: ${vendor.vicinity || "Not provided"}</p>
+              <p>Distance: ${distance.toFixed(2)} km</p>
+            </div>
+          `;
+                  infoWindow.setContent(content);
+                  infoWindow.open(map, marker);
+                });
+                marker.addListener("mouseout", function () {
+                  infoWindow.close();
+                });
+
+                vendorMarkers.push(marker);
+
+                // Draw a blue polyline from the site to this vendor.
+                var line = new google.maps.Polyline({
+                  path: [
+                    { lat: siteLat, lng: siteLng },
+                    { lat: vLat, lng: vLng }
+                  ],
+                  geodesic: true,
+                  strokeColor: "#0000FF",
+                  strokeOpacity: 1.0,
+                  strokeWeight: 2,
+                  map: map
+                });
+                lines.push(line);
+
+                // Create a sidebar card for this vendor.
+                let vendorCard = document.createElement("div");
+                vendorCard.classList.add("technician-card");
+                vendorCard.classList.add("nearby-vendor"); // Add class to identify nearby vendors
+                // Store the computed distance in a data attribute.
+                vendorCard.dataset.distance = distance.toFixed(2);
+                vendorCard.onclick = function () {
+                  panToVendor(vLat, vLng);
+                };
+
+                vendorCard.innerHTML = `
+          <div style="display: flex; align-items: center;">
+            <div> <img src="http://maps.google.com/mapfiles/ms/icons/blue-dot.png" 
+                 style="width: 20px; height: 20px; margin-right: 8px;"></div>
+            <div> <h3 style="margin: 0;">${vendor.name}</h3>
+            <div class="distance">Distance: ${distance.toFixed(2)} km</div>
+            </div>
+          </div>
+        `;
+
+                vendorListDiv.appendChild(vendorCard);
+              });
+            } catch (e) {
+              console.error("Error parsing JSON: " + e.message);
+            }
+          } else {
+            console.error("Error fetching vendors", event);
+          }
+        },
+        { escape: false }
+      );
+    }
+
+    function fetchVendor() {
+      var siteLat = parseFloat("{!site.Location__Latitude__s}");
+      var siteLng = parseFloat("{!site.Location__Longitude__s}");
+
+      // console.log(
+      //   "Fetching saved vendors for site at " + siteLat + ", " + siteLng
+      // );
+
+      // Create a single InfoWindow instance to reuse
+      let infoWindow = new google.maps.InfoWindow();
+
+      // Get the sidebar list element
+      let vendorListDiv = document.getElementById("vendor_list");
+
+      var vendorSelect = document.getElementById("vendorSelect");
+      if (vendorSelect) {
+        // Skip the first option (placeholder)
+        for (let i = 1; i < vendorSelect.options.length; i++) {
+          let option = vendorSelect.options[i];
+          let vendorLat = parseFloat(option.getAttribute("data-lat"));
+          let vendorLng = parseFloat(option.getAttribute("data-lng"));
+          let vendorName = option.getAttribute("data-name");
+          let vendorAddress = option.getAttribute("data-address");
+          let vendorPos = { lat: vendorLat, lng: vendorLng };
+
+          // Calculate distance between site and vendor
+          let distance = calculateDistance(
+            siteLat,
+            siteLng,
+            vendorLat,
+            vendorLng
+          );
+
+          // Create a red marker for the vendor on the map
+          let marker = new google.maps.Marker({
+            position: vendorPos,
+            map: map,
+            title: vendorName,
+            icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+          });
+
+          // Attach hover events to the vendor marker
+          marker.addListener("mouseover", function () {
+            let content = `
+          <div style="font-family: Arial, sans-serif; font-size: 14px;">
+            <h3>Vendor: ${vendorName}</h3>
+            <p>Address: ${vendorAddress || "Not provided"}</p>
+            <p>Distance: ${distance.toFixed(2)} km</p>
+          </div>
+        `;
+            infoWindow.setContent(content);
+            infoWindow.open(map, marker);
+          });
+          marker.addListener("mouseout", function () {
+            infoWindow.close();
+          });
+          vendorMarkers.push(marker);
+
+          // Draw a red polyline from the site to this vendor
+          let line = new google.maps.Polyline({
+            path: [{ lat: siteLat, lng: siteLng }, vendorPos],
+            geodesic: true,
+            strokeColor: "#FF0000",
+            strokeOpacity: 1.0,
+            strokeWeight: 2,
+            map: map
+          });
+          lines.push(line);
+
+          // Create a sidebar card for this vendor.
+          // Check if this vendor is already in the list (to avoid duplicates)
+          let existingVendorCards = document.querySelectorAll(
+            `#vendor_list .saved-vendor[data-name="${vendorName}"]`
+          );
+
+          if (existingVendorCards.length === 0) {
+            let vendorCard = document.createElement("div");
+            vendorCard.classList.add("technician-card");
+            vendorCard.classList.add("saved-vendor"); // Add class to identify saved vendors
+            vendorCard.dataset.distance = distance.toFixed(2);
+            vendorCard.dataset.name = vendorName;
+            vendorCard.onclick = function () {
+              panToVendor(vendorLat, vendorLng);
+            };
+
+            vendorCard.innerHTML = `
+          <div style="display: flex; align-items: center;">
+            <div> <img src="http://maps.google.com/mapfiles/ms/icons/red-dot.png" 
+                 style="width: 20px; height: 20px; margin-right: 8px;"></div>
+            <div> <h3 style="margin: 0;">${vendorName}</h3>
+            <div class="distance">Distance: ${distance.toFixed(2)} km</div>
+            </div>
+          </div>
+        `;
+
+            vendorListDiv.appendChild(vendorCard);
+          }
+        }
+      }
+    }
+
+    // Calculate distance between two points in km using Haversine formula
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Radius of the earth in km
+      const dLat = deg2rad(lat2 - lat1);
+      const dLon = deg2rad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(deg2rad(lat1)) *
+          Math.cos(deg2rad(lat2)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c; // Distance in km
+      return distance;
+    }
+
+    function deg2rad(deg) {
+      return deg * (Math.PI / 180);
+    }
+
+    // Draws/updates the range circle around the site marker
+    function updateRangeCircle(center, radiusMeters) {
+      if (rangeCircle) {
+        rangeCircle.setMap(null);
+      }
+      rangeCircle = new google.maps.Circle({
+        strokeColor: "#0000FF",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: "#0000FF",
+        fillOpacity: 0.1,
+        map: map,
+        center: center,
+        radius: radiusMeters
+      });
+    }
+
+    function updateCircleFromRange() {
+      var rangeSelect = document.getElementById("rangeSelect");
+      var rangeKm = rangeSelect ? parseFloat(rangeSelect.value) : 0;
+      var rangeMeters = rangeKm * 1000;
+      if (siteMarker) {
+        updateRangeCircle(siteMarker.getPosition(), rangeMeters);
+        if (rangeCircle) {
+          map.fitBounds(rangeCircle.getBounds());
+        }
+      }
+    }
+
+    function clearVendorMarkers() {
+      vendorMarkers.forEach(function (marker) {
+        marker.setMap(null);
+      });
+      vendorMarkers = [];
+    }
+
+    function clearLines() {
+      lines.forEach(function (line) {
+        line.setMap(null);
+      });
+      lines = [];
+    }
+
+    function panToVendor(lat, lng) {
+      var pos = { lat: lat, lng: lng };
+      map.setCenter(pos);
+      map.setZoom(14);
+    }
+
+    // Filters the vendor list based on the selected range
+    function updateVendorListByRange() {
+      console.log("updateVendorListByRange");
+      var rangeSelect = document.getElementById("rangeSelect");
+      var selectedRange = parseFloat(rangeSelect.value);
+      var vendorCards = document.querySelectorAll(
+        "#vendor_list .technician-card"
+      );
+
+      for (var i = 0; i < vendorCards.length; i++) {
+        var card = vendorCards[i];
+        var distance = parseFloat(card.getAttribute("data-distance"));
+        if (distance <= selectedRange) {
+          card.style.display = "block";
+        } else {
+          card.style.display = "none";
+        }
+      }
+    }
+
+    // Initializes the map centered on the Site's location (from the controller)
+    function initMap() {
+      var siteLat = parseFloat(
+        "{!IF(site.Location__Latitude__s != null, site.Location__Latitude__s, 20.5937)}"
+      );
+      var siteLng = parseFloat(
+        "{!IF(site.Location__Longitude__s != null, site.Location__Longitude__s, 78.9629)}"
+      );
+      map = new google.maps.Map(document.getElementById("map_canvas"), {
+        zoom: 12,
+        center: { lat: siteLat, lng: siteLng }
+      });
+
+      // Place the Site marker
+      siteMarker = new google.maps.Marker({
+        position: { lat: siteLat, lng: siteLng },
+        map: map,
+        title: "Site: {!site.Name}",
+        icon: "http://maps.google.com/mapfiles/kml/shapes/library_maps.png"
+      });
+
+      // Create an InfoWindow for the site marker
+      let siteInfoWindow = new google.maps.InfoWindow();
+
+      // Attach hover events to the site marker
+      siteMarker.addListener("mouseover", function () {
+        let content = `
+            <div style="font-family: 'Roboto', sans-serif; font-size: 14px; padding: 8px;">
+            <h3 style="margin: 0 0 5px; color: #333;">Site: {!site.Name}</h3>
+            <p style="margin: 0; color: #555;">${"{!JSENCODE(siteFullAddress)}"}</p>
+            </div>
+            `;
+        siteInfoWindow.setContent(content);
+        siteInfoWindow.open(map, siteMarker);
+      });
+      siteMarker.addListener("mouseout", function () {
+        siteInfoWindow.close();
+      });
+
+      // Clear existing markers and lines
+      clearVendorMarkers();
+      clearLines();
+
+      // Fetch both types of vendors
+      fetchNearbyVendors();
+      fetchVendor();
+    }
+
+    // When a vendor is selected from the dropdown, pan the map to its location
+    function selectVendor() {
+      var vendorSelect = document.getElementById("vendorSelect");
+      var selectedOption = vendorSelect.options[vendorSelect.selectedIndex];
+      var vendorLat = parseFloat(selectedOption.getAttribute("data-lat"));
+      var vendorLng = parseFloat(selectedOption.getAttribute("data-lng"));
+      panToVendor(vendorLat, vendorLng);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      var rangeSelect = document.getElementById("rangeSelect");
+      if (rangeSelect) {
+        rangeSelect.onchange = function () {
+          updateCircleFromRange();
+          updateVendorListByRange();
+        };
+      }
+    });
+
+    // Dynamically load the Google Maps script with the callback to initMap
+    function loadScript() {
+      var script = document.createElement("script");
+      script.type = "text/javascript";
+      // Replace YOUR_API_KEY with your actual Google Maps API key
+      script.src =
+        "https://maps.googleapis.com/maps/api/js?key=AIzaSyDVyQvMGkIBhI8p1rrbq_zWqp97QGyAdKI&sensor=false&libraries=geometry&callback=initMap";
+      document.body.appendChild(script);
+    }
+  </script>
+
+  <div class="container">
+    <div class="dropdown-container">
+      <apex:form styleClass="dropdown-form">
+        <!-- Vendor Dropdown: only vendors matching the trade are shown -->
+        <select id="vendorSelect" onchange="selectVendor()">
+          <option value="">-- Select a Vendor --</option>
+          <apex:repeat value="{!vendorWrappers}" var="vw">
+            <option
+              value="{!vw.vendor.Id}"
+              data-name="{!JSENCODE(vw.vendor.Name)}"
+              data-lat="{!vw.vendor.Location__Latitude__s}"
+              data-lng="{!vw.vendor.Location__Longitude__s}"
+              data-address="{!JSENCODE(vw.fullAddress)}"
+            >
+              > {!vw.vendor.Name}
+            </option>
+          </apex:repeat>
+        </select>
+        <!-- Range Dropdown (retained as before) -->
+        <select id="rangeSelect">
+          <option value="">-- Select Range --</option>
+          <apex:repeat value="{!rangeSettings}" var="rs">
+            <option value="{!rs.rangeValue}">{!rs.rangeValue} km</option>
+          </apex:repeat>
+        </select>
+      </apex:form>
+    </div>
+    <div class="content">
+      <div id="map_canvas"></div>
+      <div id="vendor_list">
+        <div class="vendor-heading-container">
+          <h2 class="vendor-heading">Related Vendors</h2>
+        </div>
+        <!-- The static vendor cards (red markers) are now generated by fetchVendor() -->
+        <!-- We can keep this section empty since both saved and nearby vendors will be populated dynamically -->
+      </div>
+    </div>
+  </div>
+</apex:page>

@@ -1,0 +1,14 @@
+<template>
+    <lightning-card title="Decline Rate">
+        <div class="slds-p-around_medium">
+            <template if:true={showDeclineButton}>
+                <lightning-button 
+                    label="Decline" 
+                    icon-name="utility:close"
+                    variant="destructive" 
+                    onclick={handleDecline}>
+                </lightning-button>
+            </template>
+        </div>
+    </lightning-card>
+</template>

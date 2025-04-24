@@ -1,0 +1,132 @@
+<apex:page Standardcontroller="Estimate__c" extensions="EstimateController" renderAs="pdf" applyBodyTag="false">
+  <head>
+        <style type="text/css">
+            body { font-family: Arial Unicode MS; }
+        </style>
+    </head>
+    <h1>Estimate</h1>
+<table style="width: 100%; background-color: #00A100;">
+        <tbody>
+            <tr>
+                <td style="width: 265px;"><img style="float: left;" src="{!URLFOR($Resource.JFlogo)}" alt="Company Logo" width="100" height="100" /></td>
+                <td style="text-align: right; color:#fff; width: 467px;">
+                    <p>Phone: 123456789<br/>Website: www.deligence.com</p>
+                    <div style="text-align: right; margin-bottom:20px;">
+      Date: 
+        <apex:outputText value="{0,date, MM'/'dd'/'yyyy}">
+            <apex:param value="{!TODAY()}" /> 
+        </apex:outputText>
+    </div> 
+                </td>
+            </tr>
+        </tbody>
+    </table>
+  <!-- <div style="text-align: right; margin-bottom:20px;">
+      Date: 
+        <apex:outputText value="{0,date, MM'/'dd'/'yyyy}">
+            <apex:param value="{!TODAY()}" /> 
+        </apex:outputText>
+    </div> -->
+    
+    <table style="border:0.5px solid #fff; font-family:sans-serif;">
+        <tr style="color:#fff; background-color:#059905;">
+            <th style="padding-left:10px; padding-right:170px; font-size: 15px;">Bill To</th>
+            <th style="background-color:#fff;">BLANK COL</th>
+            <th style="padding-left:10px; padding-right:170px; font-size: 15px;">Estimate Information</th>    
+        </tr>
+        <tr>
+            <td style="padding-left:10px;"><strong>Bill To:</strong> <apex:outputField value="{!objEstimate.Contact__r.Name}"/></td>
+            <td></td>
+            <td style="padding-left:10px;"><strong>Estimate Name:</strong> <apex:outputField value="{!Estimate__c.Name}"/></td>
+        </tr>
+        <tr>
+            <td style="padding-left:10px;"><strong>Street:</strong> <apex:outputField value="{!objEstimate.Contact__r.MailingStreet}"/></td>
+            <td></td>
+            <td style="padding-left:10px;"><strong>Estimate date:</strong> <apex:outputField value="{!Estimate__c.Estimate_Date__c}"/></td>
+        </tr>
+        <tr>
+            <td style="padding-left:10px;"><strong>City:</strong> <apex:outputField value="{!objEstimate.Contact__r.MailingCity}"/></td>
+            <td></td>
+            <td style="padding-left:10px;"><strong>Total amount (without tax):</strong> <apex:outputField value="{!Estimate__c.total_amount__c}"/></td>
+        </tr>
+        <tr>
+            <td style="padding-left:10px;"><strong>State:</strong> <apex:outputField value="{!objEstimate.Contact__r.MailingState}"/></td>
+            <td></td>
+            <td style="padding-left:10px;"><strong>Tax:</strong> <apex:outputField value="{!Estimate__c.Tax__c}"/></td>
+        </tr>
+        <tr>
+            <td style="padding-left:10px;"><strong>Postalcode:</strong> <apex:outputField value="{!objEstimate.Contact__r.MailingPostalCode}"/></td>
+            <td></td>
+            <td style="padding-left:10px;"><strong>Grand total:</strong> <apex:outputField value="{!Estimate__c.Grand_total__c}"/></td>
+        </tr>
+        <tr>
+            <td style="padding-left:10px;"><strong>Country:</strong> <apex:outputField value="{!objEstimate.Contact__r.MailingCountry}"/></td>
+            <td></td>
+            <td style="padding-left:10px;"><strong>Estimate Status:</strong> </td>
+        </tr> 
+    </table>
+     <p style="padding: 0px 170px 3px 10px; margin-top:30px; border:1px solid #fff; font-family:sans-serif; color:#fff; background-color:#059905; font-size: 15px;"><b>Estimate Line Items</b></p> 
+    <apex:pageBlock >
+        <table>
+            <thead>
+                <tr>
+                    <th >Product</th>
+                    <th style="padding-left:70px;">Quantity</th>
+                    <th style="padding-left:70px;">Unit Price</th>
+                    <th style="padding-left:70px;">Total Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <apex:repeat value="{!estItemList}" var="objEstItem">
+                    <tr>
+                        <td>{!objEstItem.Product__r.Name}</td>
+                       <td style="padding-left:80px;">{!objEstItem.Quantity__c}</td>
+                        <td style="padding-left:80px;">{!objEstItem.Unit_Price__c}</td>
+                        <td style="padding-left:80px;">{!objEstItem.Total_Price__c}</td>
+                    </tr>
+                </apex:repeat>
+            </tbody>
+            
+        </table>
+    </apex:pageBlock>
+
+    <div>
+<apex:pageBlock > 
+     <table style="border:solid 0.5px #000; border-top:none; font-family:sans-serif; margin-top:50px;">
+<tr>
+    <td style="padding: 0px 370px 3px 10px; background-color:#059905; color:#fff; font-size: 15px;"><b>Comments</b></td>
+</tr>
+<tr>
+    <td style="padding-left:10px;">1. Payment due in 30 days</td>
+</tr>
+<tr>
+    <td style="padding-left:10px;">2. Please note the Estimate number in your payment method</td>
+</tr>
+<tr>
+    <td style="padding-left:10px; padding-bottom:60px;">Banking and wire transfer information may also be included here</td>
+</tr>
+</table>
+    
+<table style="margin-left:500px; margin-top:-150px; z-index:1; font-family:sans-serif;">
+<tr>
+    <td style="padding-right:5px; text-align:right;">Total Amount: </td>
+    <td style="text-align:right;"><apex:outputField value="{!Estimate__c.total_amount__c}"/></td>
+</tr>
+<tr>
+    <td style="padding-right:5px; text-align:right;">Tax: </td>
+    <td style="text-align:right;"><apex:outputField value="{!Estimate__c.Tax__c}"/></td>
+</tr>
+<tr>
+    <td style="padding-right:5px; text-align:right;">Grand Total: </td>
+    <td style="text-align:right;"><apex:outputField value="{!Estimate__c.Grand_total__c}"/></td>
+</tr>
+</table>
+
+<table style="margin-left:500px; padding-top:30px; z-index:1; color:#059905; font-family:sans-serif;">
+<tr>
+    <td>Thank you for your business!</td>
+</tr>
+</table> 
+</apex:pageBlock>   
+    </div>
+</apex:page>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RecordType xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Incurred_for_estimate</fullName>
+    <active>true</active>
+    <label>Incurred For Estimate</label>
+    <picklistValues>
+        <picklist>Rate_Type__c</picklist>
+        <values>
+            <fullName>After Hour Rate</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Emergency Rate</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Holiday Rate</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Regular Rate</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Weekend Emergency rate</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Weekend Rate</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>Type__c</picklist>
+        <values>
+            <fullName>Incurred for Estimate</fullName>
+            <default>true</default>
+        </values>
+    </picklistValues>
+</RecordType>

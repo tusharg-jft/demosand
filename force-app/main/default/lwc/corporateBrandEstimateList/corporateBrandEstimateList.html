@@ -1,0 +1,65 @@
+<template>
+    <div style="border: 1px solid #D8D8D8; border-radius: 5px;">
+        <article class="slds-card">
+            <!-- Header -->
+            <div class="slds-card__header slds-grid slds-grid_align-spread slds-p-around_small">
+                <div class="slds-media slds-media_center slds-p-around_medium">
+                    <lightning-icon icon-name="standard:contact" size="small"></lightning-icon>
+                    <span class="slds-m-left_small" style="font-weight: bold">Related Estimate</span>
+                </div>
+
+                <!-- Status Filter (Right Aligned) -->
+                <div style="width: 25%;" class="slds-m-right_medium">
+                    <lightning-combobox
+                        name="statusFilter"
+                        label="Filter by Status"
+                        value={selectedStatus}
+                        options={statusOptions}
+                        onchange={handleStatusChange}>
+                    </lightning-combobox>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="slds-scrollable">
+                <lightning-datatable
+                key-field="Id"
+                data={filteredList}
+                columns={columns}
+                show-row-number-column
+                hide-checkbox-column
+                 onrowaction={handleRowAction}
+                
+                >
+            </lightning-datatable>
+            
+            </div>
+           
+            
+            <template if:true={showModal}>
+                <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_large">
+                    <div class="slds-modal__container" style="width: 60%; max-width: 60%;">
+                        <header class="slds-modal__header">
+                            <button class="slds-button slds-modal__close" title="Close" onclick={closeModal}>
+                                <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                            </button>
+                            <h2 class="slds-modal__title">Estimate Preview</h2>
+                        </header>
+            
+                        <div class="slds-modal__content" style="height: 80vh;">
+                            <iframe src={vfPageUrl} width="100%" height="100%" frameborder="0"></iframe>
+                        </div>
+            
+                        <footer class="slds-modal__footer">
+                            <lightning-button label="Close" onclick={closeModal}></lightning-button>
+                        </footer>
+                    </div>
+                </section>
+                <div class="slds-backdrop slds-backdrop_open"></div>
+            </template>
+            
+            
+        </article>
+    </div>
+
+</template>

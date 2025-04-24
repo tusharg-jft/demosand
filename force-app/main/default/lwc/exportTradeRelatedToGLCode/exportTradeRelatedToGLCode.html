@@ -1,0 +1,31 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 02-05-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<template>
+    <template if:true={isLoading}>
+        <lightning-spinner alternative-text="Loading..." variant="brand"></lightning-spinner>
+    </template>
+
+    <template if:true={trades}>
+        <lightning-datatable
+            key-field="Id"
+            data={trades}
+            columns={columns}>
+        </lightning-datatable>
+        <div>
+        <lightning-button label="Export as CSV" onclick={handleExportAsCSV}></lightning-button>
+    </div>
+    </template>
+
+    <template if:true={error}>
+        <div class="slds-text-color-error">{error}</div>
+    </template>
+
+    <template if:true={noTrades}>
+        <div class="slds-text-color-error">No trades available for this GL Code</div>
+    </template>
+</template>

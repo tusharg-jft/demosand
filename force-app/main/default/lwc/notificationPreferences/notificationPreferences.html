@@ -1,0 +1,63 @@
+<!--
+  Description : Component to control notifications based on users
+-->
+
+<template>
+    <lightning-card title="Notification Preferences" icon-name="utility:notification">
+        <div class="slds-grid slds-wrap slds-m-around_small slds-align-end">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_3-of-4">
+            <!--    <h2>Notification Preferences</h2> -->
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4 slds-m-bottom_small" style="margin-top: -62px;">
+                <lightning-input
+                    type="search"
+                    placeholder="Search by Preference Name"
+                    onchange={handleSearch}>
+                </lightning-input>
+            </div>
+        </div>
+        <div class="slds-grid slds-wrap slds-m-horizontal_medium slds-m-top_small">
+            <div class="slds-col slds-size_1-of-2">
+                <strong class="slds-text-heading_xx-small" style="margin-left: -3px;">Preference Name</strong>
+            </div>
+            <div class="slds-col slds-size_1-of-4" style="margin-left: -24px;">
+                <strong>Email Notification</strong>
+            </div>
+            <div class="slds-col slds-size_1-of-4">
+                <strong>Push Notification</strong>
+            </div>
+        </div>
+
+        <template for:each={filteredPreferences} for:item="pref">
+            <div key={pref.Id} class="slds-grid slds-wrap slds-m-around_small" style="margin-left: 13px;">
+                <div class="slds-col slds-size_1-of-2" style="color:rgb(0, 0, 0);">
+                    {pref.Name}
+                    <lightning-helptext 
+                    content={pref.helpText} 
+                    icon-name="utility:info" 
+                    variant="success"
+                    class="slds-m-left_xx-small" 
+                    style="margin-bottom:10px;">
+                </lightning-helptext>                </div>
+                <div class="slds-col slds-size_1-of-4">
+                    <lightning-input type="toggle"
+                                     checked={pref.EmailNotificationEnabled}
+                                     data-id={pref.Id}
+                                     data-type="email"
+                                     onchange={handleToggleChange}
+                                     style="margin-left: -12px;">
+                    </lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-4">
+                    <lightning-input type="toggle"
+                                     checked={pref.PushNotificationEnabled}
+                                     data-id={pref.Id}
+                                     data-type="push"
+                                     onchange={handleToggleChange}
+                                     style="margin-left: -12px;">
+                    </lightning-input>
+                </div>
+            </div>
+        </template>
+    </lightning-card>
+</template>

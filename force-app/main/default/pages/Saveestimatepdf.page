@@ -1,0 +1,20 @@
+<apex:page Standardcontroller="Estimate__c" extensions="EstimateController" showHeader="false" title="Estimate" showQuickActionVfHeader="false">
+    <style>
+        #pgmessagesid{
+        -webkit-animation: cssAnimation 2s forwards;
+        animation: cssAnimation 2s forwards;
+        }
+    </style>
+    <apex:form >  
+        <div id="pgmessagesid">
+            <apex:pageMessages />
+        </div>
+        <center> 
+            <apex:commandButton action="{!save}"  value="Save and send attachment" /> 
+        </center>
+        <br/>
+        <center>
+            <apex:iframe height="800px"  width="800px" src="/apex/Estimate?Id={!RecordId}"/>
+        </center>
+    </apex:form>
+</apex:page>

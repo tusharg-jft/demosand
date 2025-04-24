@@ -1,0 +1,180 @@
+<!--
+  @description: Custom calender to show filtered trips.
+-->
+<template>
+    <div class="slds-grid slds-wrap">
+        <div class="slds-col slds-size_1-of-1 slds-grid slds-grid_align-end slds-p-around_small">
+            <button class="slds-button slds-button_icon slds-button_icon-border slds-align_left" onclick={toggleView} title={viewLabel}>
+               <lightning-icon 
+                    icon-name="utility:list"
+                    alternative-text={viewLabel} 
+                    size="small">
+                </lightning-icon>
+            </button>
+        </div>
+
+        <!-- Calendar Section -->
+        <template if:true={isCalendarView}>
+            <div 
+                class="slds-col slds-size_2-of-3 slds-p-around_medium slds-border_right"
+                style="background-color: #ffffff; overflow-y: auto;">
+                <div class="calendar"></div>
+            </div>
+        </template>
+
+        <!-- List Section -->
+        <template if:false={isCalendarView}>
+            <div 
+                class="slds-col slds-size_2-of-3 slds-border_left slds-border_right slds-table_bordered slds-p-around_medium"
+                style="background-color: #e8e7e7; overflow-y: auto;">
+                <div class="slds-grid slds-wrap" style="background-color: #e8e7e7;">
+                    <div class="slds-col slds-size_1-of-3 slds-grid slds-p-around_small slds-text-align_left" >
+                     <button class="slds-button slds-button_neutral" style="margin-top: 11px;" onclick={openFilterModal}>Filter</button>
+                    </div>
+                    <div  class="slds-col slds-size_1-of-3"></div>
+                    <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                     <lightning-input type="text" label="Search Trip..." onchange={handleInputChange}></lightning-input>
+                    </div>
+                </div>
+    
+                <table class="slds-table slds-table_cell-buffer slds-border_left slds-border_right slds-table_bordered">
+                    <thead>
+                        <tr class="slds-text-title_caps">
+                          <!--  <th scope="col">Trip #</th>--> 
+                            <th scope="col">Trip Name</th>
+                            <th scope="col">WO</th>
+                            <th scope="col">Status</th>
+                           <!--   <th scope="col">Date</th>--> 
+                            <th scope="col">Brand</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template for:each={filteredTrips} for:item="trip">
+                            <tr key={trip.id} data-id={trip.id} onclick={handleRowClick}>
+                               <!--    <td>{trip.id}</td>--> 
+                                <td><a href="javascript:void(0)" onclick={openTrip} data-id={trip.id}>{trip.name}</a></td>
+                                <td><a href="javascript:void(0)" onclick={openwo} data-id={trip.workOrderId}>{trip.WO}</a></td>
+                                <td>{trip.status}</td>
+                             <!--     <td>{trip.start}</td>--> 
+                                <td><a href="javascript:void(0)" onclick={openbrand} data-id={trip.brandId}>{trip.BR}</a></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+                <div class="slds-m-top_medium slds-grid slds-wrap slds-grid_align-spread">
+                    <lightning-button 
+                        label="Previous" 
+                        onclick={handlePreviousPage} 
+                        disabled={isPreviousDisabled}>
+                    </lightning-button>
+                    <span>Page {currentPage} of {totalPages}</span>
+                    <lightning-button 
+                        label="Next" 
+                        onclick={handleNextPage} 
+                        disabled={isNextDisabled}>
+                    </lightning-button>
+            </div>
+            </div>
+        </template>
+
+        <!-- Filter Modal -->
+        <template if:true={isFilterModalOpen}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 class="slds-text-heading_medium">Filter Trips</h2>
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" onclick={closeFilterModal}>
+                            <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        </button>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label" for="dateRange">Select Date Range</label>
+                            <div class="slds-input slds-p-around_x-small slds-border" onclick={openDateRangeModal}>
+                                {selectedDateRangeLabel}
+                            </div>
+                        </div>
+                        <div class="slds-form-element">
+                         <!--  <label class="slds-form-element__label" for="brand">Select Brand</label>--> 
+                            <lightning-combobox 
+                                name="brand" 
+                                label="Brand" 
+                                value={selectedBrand} 
+                                options={brands} 
+                                onchange={handleBrandChange} 
+                                placeholder="Select a Brand">
+                            </lightning-combobox>
+                        </div>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_neutral" onclick={closeFilterModal}>Cancel</button>
+                        <button class="slds-button slds-button_brand" onclick={applyFilters}>Apply</button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- Date Range Modal -->
+        <template if:true={isDateRangeModalOpen}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 class="slds-text-heading_medium">Select Date Range</h2>
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" onclick={closeDateRangeModal}>
+                            <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        </button>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <div class="slds-form-element slds-m-bottom_medium">
+                            <label class="slds-form-element__label" for="dateFrom">From</label>
+                            <input type="date" id="dateFrom" class="slds-input" onchange={handleDateFromChange} value={selectedDateFrom} />
+                        </div>
+
+                        <div class="slds-form-element slds-m-bottom_medium">
+                            <label class="slds-form-element__label" for="dateTo">To</label>
+                            <input type="date" id="dateTo" class="slds-input" onchange={handleDateToChange} value={selectedDateTo} />
+                        </div>
+
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label">Quick Select</label>
+                            <div class="slds-button-group" role="group">
+                                <button class="slds-button slds-button_neutral" onclick={selectToday}>Today</button>
+                                <button class="slds-button slds-button_neutral" onclick={selectLast7Days}>Last 7 Days</button>
+                                <button class="slds-button slds-button_neutral" onclick={selectLastWeek}>Last Week</button>
+                                <button class="slds-button slds-button_neutral" onclick={selectLastMonth}>Last Month</button>
+                                <button class="slds-button slds-button_neutral" onclick={selectLastYear}>Last Year</button>
+                            </div>
+                        </div>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_neutral" onclick={closeDateRangeModal}>Cancel</button>
+                        <button class="slds-button slds-button_brand" onclick={applyDateRange}>Apply</button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- Sidebar Section -->
+        <div 
+            class="slds-col slds-size_1-of-3 slds-border_left slds-border_right slds-table_bordered  slds-p-around_medium"
+            style="background-color: rgb(232, 231, 231); overflow-y: auto;">
+            <h2 class="slds-text-heading_small slds-m-bottom_medium">Status</h2>
+            <ul class="slds-list_vertical slds-m-left_small">
+                <template for:each={statuses} for:item="status">
+                    <li key={status.name} class="slds-m-bottom_small slds-grid"> 
+                        <input 
+                            type="checkbox" 
+                            style="background-color: rgb(84, 63, 63);"
+                            data-status={status.name} 
+                            onchange={handleStatusChange} 
+                            class="slds-m-right_small"
+                        />
+                         {status.name}
+                    </li>
+                </template>
+            </ul>
+        </div>
+    </div>
+</template>

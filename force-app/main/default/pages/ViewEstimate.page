@@ -1,0 +1,47 @@
+<apex:page standardController="Estimate__c" extensions="EditEstimateVFController">
+    <apex:form>
+        <apex:pageBlock title="Estimate Breakdown">
+            <apex:repeat value="{!EstimateBreakdown}" var="section">
+                <apex:pageBlockSection title="{!section.label}" columns="1" collapsible="true">
+                    <apex:repeat value="{!section.fields}" var="fieldRow">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                            <tr>
+                                <apex:repeat value="{!fieldRow}" var="field">
+                                    <th style="padding: 5px; background-color: #f3f2f2;">{!field.fieldLabel}</th>
+                                </apex:repeat>
+                            </tr>
+                            <tr>
+                                <apex:repeat value="{!fieldRow}" var="field">
+                                    <td style="padding: 5px;">{!field.value}</td>
+                                </apex:repeat>
+                            </tr>
+                        </table>
+                        <br/>
+                    </apex:repeat>
+                </apex:pageBlockSection>
+            </apex:repeat>
+        </apex:pageBlock>
+
+        <apex:pageBlock title="Incurred Breakdown">
+            <apex:repeat value="{!IncurredBreakdown}" var="section">
+                <apex:pageBlockSection title="{!section.label}" columns="1" collapsible="true">
+                    <apex:repeat value="{!section.fields}" var="fieldRow">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                            <tr>
+                                <apex:repeat value="{!fieldRow}" var="field">
+                                    <th style="padding: 5px; background-color: #f3f2f2;">{!field.fieldLabel}</th>
+                                </apex:repeat>
+                            </tr>
+                            <tr>
+                                <apex:repeat value="{!fieldRow}" var="field">
+                                    <td style="padding: 5px;">{!field.value}</td>
+                                </apex:repeat>
+                            </tr>
+                        </table>
+                        <br/>
+                    </apex:repeat>
+                </apex:pageBlockSection>
+            </apex:repeat>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

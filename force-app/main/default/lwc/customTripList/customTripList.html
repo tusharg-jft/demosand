@@ -1,0 +1,36 @@
+<template>
+    <div style="border: 1px solid #D8D8D8; border-radius: 5px;">
+        <article class="slds-card">
+            <!-- Header -->
+            <div class="slds-card__header slds-grid slds-grid_align-spread slds-p-around_small">
+                <div class="slds-media slds-media_center slds-p-around_medium">
+                    <lightning-icon icon-name="standard:shipment" size="small"></lightning-icon>
+                    <span class="slds-m-left_small" style="font-weight: bold">Related Trips</span>
+                </div>
+
+                <!-- Vendor Filter -->
+                <div style="width: 25%;" class="slds-m-right_medium">
+                    <lightning-combobox
+                        name="vendorFilter"
+                        label="Filter by Vendor"
+                        value={selectedVendor}
+                        options={vendorOptions}
+                        onchange={handleVendorChange}>
+                    </lightning-combobox>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="slds-scrollable_y" style="max-height: 400px;">
+                <lightning-datatable
+                    key-field="Id"
+                    data={filteredList}
+                    columns={columns}
+                    show-row-number-column
+                    hide-checkbox-column
+                    oncellclick={handleCellClick}>
+                </lightning-datatable>
+            </div>
+        </article>
+    </div>
+</template>

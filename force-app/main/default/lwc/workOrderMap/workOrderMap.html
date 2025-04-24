@@ -1,0 +1,143 @@
+<template>
+    <div class="map-container">
+        <!-- Loading spinner -->
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </template>
+
+        <!-- Error message -->
+        <template if:true={error}>
+            <div class="error-message slds-p-around_medium">
+                <lightning-card title="Error Loading Map" icon-name="utility:error">
+                    <div class="slds-p-around_medium">
+                        <p class="slds-text-color_error">{error}</p>
+                    </div>
+                </lightning-card>
+            </div>
+        </template>
+
+        <div class="slds-grid slds-wrap">
+            <!-- Controls panel -->
+            <div class="slds-col slds-size_1-of-3 slds-p-right_medium">
+                <lightning-card title="Work Orders" icon-name="standard:work_order">
+                    <div class="slds-p-around_medium">
+                        <!-- Work Order Selection -->
+                        <lightning-combobox
+                            label="Select Work Order"
+                            value={selectedWorkOrderId}
+                            options={workOrderOptions}
+                            onchange={handleWorkOrderSelect}>
+                        </lightning-combobox>
+                        
+                        <!-- Search Radius -->
+                        <div class="slds-p-top_small">
+                            <lightning-input 
+                                type="number" 
+                                label="Search Radius (km)" 
+                                value={searchRadius}
+                                onchange={handleRadiusChange}>
+                            </lightning-input>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="slds-p-top_small">
+                            <lightning-button-group>
+                                <lightning-button 
+                                    label="Find Nearby Vendors" 
+                                    icon-name="utility:search"
+                                    onclick={findNearbyVendors}
+                                    disabled={noWorkOrderSelected}>
+                                </lightning-button>
+                                <lightning-button 
+                                    label="Refresh Map" 
+                                    icon-name="utility:refresh"
+                                    onclick={refreshMap}>
+                                </lightning-button>
+                            </lightning-button-group>
+                        </div>
+                    </div>
+                </lightning-card>
+                
+                <!-- Vendor List (if available) -->
+                <template if:true={hasVendors}>
+                    <div class="slds-p-top_medium">
+                        <lightning-card title="Nearby Vendors" icon-name="standard:service_resource">
+                            <div class="slds-p-around_medium">
+                                <ul class="slds-has-dividers_bottom-space">
+                                    <template for:each={vendors} for:item="vendor">
+                                        <li key={vendor.id} class="slds-item">
+                                            <div class="slds-grid slds-gutters">
+                                                <div class="slds-col slds-size_3-of-4">
+                                                    <p><strong>{vendor.title}</strong></p>
+                                                    <p>Distance: {vendor.distance} km</p>
+                                                </div>
+                                                <div class="slds-col slds-size_1-of-4 slds-align_absolute-center">
+                                                    <lightning-button-icon 
+                                                        icon-name="utility:pin"
+                                                        alternative-text="View on Map"
+                                                        title="View on Map"
+                                                        onclick={viewVendorOnMap}
+                                                        data-id={vendor.id}>
+                                                    </lightning-button-icon>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </lightning-card>
+                    </div>
+                </template>
+            </div>
+            
+            <!-- Map panel -->
+            <div class="slds-col slds-size_2-of-3">
+                <lightning-card title="Map View" icon-name="utility:location">
+                    <div class="slds-p-around_medium">
+                        <div class="map-iframe-container">
+                            <iframe 
+                                src={mapUrl}
+                                height="400" 
+                                width="100%" 
+                                style="border:0;" 
+                                allowfullscreen="" 
+                                loading="lazy" 
+                                referrerpolicy="no-referrer-when-downgrade">
+                            </iframe>
+                        </div>
+                    </div>
+                </lightning-card>
+            </div>
+        </div>
+
+        <!-- Assignment Modal -->
+        <template if:true={showAssignModal}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 class="slds-text-heading_medium">Assign Work Order</h2>
+                        <button class="slds-button slds-button_icon slds-modal__close" onclick={closeAssignModal}>
+                            <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                        </button>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <template if:true={selectedVendors}>
+                            <lightning-radio-group
+                                name="vendorSelection"
+                                label="Select Vendor"
+                                options={vendorOptions}
+                                value={selectedVendorId}
+                                onchange={handleVendorSelection}>
+                            </lightning-radio-group>
+                        </template>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_neutral" onclick={closeAssignModal}>Cancel</button>
+                        <button class="slds-button slds-button_brand" onclick={handleAssignWorkOrder}>Assign</button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+    </div>
+</template>

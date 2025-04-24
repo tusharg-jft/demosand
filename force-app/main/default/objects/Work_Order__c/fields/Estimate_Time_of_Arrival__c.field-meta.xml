@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Estimate_Time_of_Arrival__c</fullName>
+    <formula>CASE(
+TEXT(Select__c),
+&quot;P2 - Priority 2 hours&quot;, Original_ETA__c + (2/24),
+&quot;P4 - Priority 4 hours&quot;, Original_ETA__c + (4/24),
+&quot;P8 - Priority 8 hours&quot;, Original_ETA__c + (8/24),
+&quot;P24 - Priority 24 hours&quot;, Original_ETA__c + 1,
+&quot;P48 - Priority 48 hours&quot;, Original_ETA__c + 2,
+&quot;NP72 - Non Priority 72 hours&quot;, Original_ETA__c + (72/24),
+&quot;ND8 - Next Day 8 AM&quot;, DATETIMEVALUE(TEXT(YEAR(DATEVALUE(Original_ETA__c))) + &quot;-&quot; + TEXT(MONTH(DATEVALUE(Original_ETA__c))) + &quot;-&quot; + TEXT(DAY(DATEVALUE(Original_ETA__c) + 1)) + &quot; 08:00:00&quot;),
+&quot;ND10 - Next Day 10 AM&quot;, DATETIMEVALUE(TEXT(YEAR(DATEVALUE(Original_ETA__c))) + &quot;-&quot; + TEXT(MONTH(DATEVALUE(Original_ETA__c))) + &quot;-&quot; + TEXT(DAY(DATEVALUE(Original_ETA__c) + 1)) + &quot; 10:00:00&quot;),
+&quot;ND2P - Next Day 2 PM&quot;, DATETIMEVALUE(TEXT(YEAR(DATEVALUE(Original_ETA__c))) + &quot;-&quot; + TEXT(MONTH(DATEVALUE(Original_ETA__c))) + &quot;-&quot; + TEXT(DAY(DATEVALUE(Original_ETA__c) + 1)) + &quot; 14:00:00&quot;),
+&quot;NPW1 - Non Priority 1 Week&quot;, Original_ETA__c + (168/24),
+&quot;NPW2 - Non Priority 2 Week&quot;, Original_ETA__c + (336/24),
+&quot;NPM1 - Non Priority 1 Month&quot;, Original_ETA__c + (720/24),
+&quot;NPM2 - Non Priority 2 Month&quot;, Original_ETA__c + (1440/24),
+&quot;PSM - Priority- Service - Maintenance 6 Months&quot;, Original_ETA__c + (4320/24),
+&quot;MWO - Material Work Order&quot;, NULL,
+NULL
+)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Estimate Time of Arrival</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>DateTime</type>
+</CustomField>

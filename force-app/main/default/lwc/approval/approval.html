@@ -1,0 +1,26 @@
+<template>
+    <template if:true={isCorporate}>
+        <template if:true={isPending}>
+
+        <div class="slds-m-horizontal_medium approval-container" style="text-align: right;">
+            <lightning-card >
+                <div class="button-group">
+                    <lightning-button 
+                        label="Accept" 
+                        
+                        onclick={handleApprove}
+                        class="slds-m-right_small">
+                    </lightning-button>
+
+                    <lightning-button 
+                        label="Reject" 
+                        
+                        onclick={handleReject}>
+                    </lightning-button>
+                </div>
+            </lightning-card>
+        </div>
+    </template>
+</template>
+
+</template>

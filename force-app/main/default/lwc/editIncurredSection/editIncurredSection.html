@@ -1,0 +1,77 @@
+<template>
+    <!-- Iterate through each section in the Estimate array -->
+    <template for:each={formData.Incurred} for:item="section">
+      <div key={section.Label} class="estimate-section slds-m-bottom_medium slds-m-top_large">
+        <h3 class="slds-text-title_bold">{section.Label}</h3>
+        
+        <!-- Dynamic Fields for each section -->
+        <template for:each={section.Fields} for:item="fieldRow" for:index="index">
+          <div key={fieldRow} class="estimate-row slds-grid slds-wrap slds-gutters slds-m-bottom_x-small">
+            <template for:each={fieldRow} for:item="field">
+              <div key={field.fieldLabel} class="slds-col slds-p-around_x-small">
+                <!-- Label with Asterisk for Required Fields -->
+                <label class="slds-form-element__label">
+                  {field.fieldLabel}
+                  <template if:true={field.required}>
+                    <abbr class="slds-required" title="required">*</abbr>
+                  </template>
+                </label>
+                
+                <!-- Input Field with Value Binding -->
+                <lightning-input
+                  data-label={section.Label}
+                  data-field={field.fieldLabel}
+                  data-index={index}
+                  class="slds-m-top_xx-small"
+                  type={field.inputType}
+                  required={field.required}
+                  disabled={field.isDisabled}
+                  onchange={handleInputChange}
+                  value={field.value}
+                  
+                ></lightning-input>
+              </div>
+            </template>
+            <template if:true={section.Picklist}>
+              <lightning-combobox
+              name="picklist"
+              label="Select an Option"
+              value={selectedPickListValue}
+              placeholder="Select an option"
+              options={options}
+              onchange={handlePickListChange}>
+          </lightning-combobox>
+            </template>
+  
+           
+            
+            <!-- Delete Button -->
+            <div class="slds-col slds-p-around_x-small slds-align-bottom slds-m-left_auto">
+              <lightning-button
+                label="Delete"
+                variant="destructive"
+                onclick={handleDeleteField}
+                data-label={section.Label}
+                data-index={index}
+              ></lightning-button>
+            </div>
+          </div>
+        </template>  
+  
+        <!-- Add Button -->
+        <div class="slds-grid" key={section.Label}>
+          <div class="slds-m-left_auto">
+            <lightning-button
+              label="Add"
+              onclick={handleAddField}
+              data-label={section.Label}
+              class="slds-m-bottom_small"
+            ></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
+  
+ 
+
+  </template>

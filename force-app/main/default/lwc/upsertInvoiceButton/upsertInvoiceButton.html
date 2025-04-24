@@ -1,0 +1,264 @@
+<template>
+  <lightning-button
+      label={label}
+
+      onclick={handleClick}>
+  </lightning-button>
+
+  <template if:true={showModal}>
+
+<section class="slds-modal slds-fade-in-open" role="dialog" aria-modal="true">
+
+    <div class="slds-modal__container" style="width: 80vw; max-width: 80vw;">
+
+        
+<!-- Header Section -->
+<header class="slds-modal__header slds-p-horizontal_medium">
+<button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+onclick={handleCloseModal} title="Close">
+<lightning-icon icon-name="utility:close" alternative-text="Close" size="small"></lightning-icon>
+</button>
+
+  <h2 class="slds-text-heading_medium slds-text-align_left custom-capitalize-first">{type} Invoice</h2>
+</header>
+
+<!-- Content Section -->
+<div class="slds-modal__content slds-p-around_medium">
+  <h1 class="slds-text-heading_medium slds-m-bottom_medium" style="border-bottom: 1px solid #d8d8d8; padding-bottom: 8px;">
+    {workOrderData.Name}
+  </h1>
+
+  <!-- Site Info and Vendor Info Side by Side -->
+  <div class="slds-grid slds-gutters">
+    <!-- Site Info -->
+    <div class="slds-col slds-size_1-of-2 ">
+      <h3 class="slds-text-title_bold slds-m-around_medium">Site Info</h3>
+      <p class="slds-m-around_medium"><strong>Name:</strong> {siteData.Name}</p>
+      <p class="slds-m-around_medium"><strong>Address:</strong> {formattedsiteAddress} </p>
+      <p class="slds-m-around_medium"><strong>Phone:</strong> {siteData.Phone__c}</p>
+    </div>
+
+    <!-- Vendor Info -->
+    <div class="slds-col slds-size_1-of-2 ">
+      <h3 class="slds-text-title_bold slds-m-around_medium" >Vendor Info</h3>
+      <p class="slds-m-around_medium"><strong>Name:</strong>  {vendorData.Name}</p>
+      <p class="slds-m-around_medium"><strong>Address:</strong> {formattedvendorAddress}</p>
+      <p class="slds-m-around_medium"><strong>Phone:</strong> {vendorData.Phone__c}</p>
+    </div>
+  </div>
+
+  <div class="slds-grid slds-m-top_medium">
+    <div class="slds-col slds-size_1-of-2">
+      <label class="slds-form-element__label">Internal Estimate No</label>
+      <input 
+        oninput={handleInternalnumber} 
+        type="number" 
+        class="slds-input" 
+        value={internalEstimateNumber}
+        placeholder="Enter Estimate Number" />
+    </div>
+  </div>
+  
+  
+
+<!-- Assessment/Troubleshoot Section -->
+<div class="slds-m-top_medium">
+  <label class="slds-form-element__label">Assessment/Troubleshoot</label>
+  <lightning-input-rich-text 
+    data-id="assessment" 
+    onchange={handleRichTextChange}
+  
+    >
+    
+  </lightning-input-rich-text>
+</div>
+
+<!-- Proposal for Repairs Section -->
+<div class="slds-m-top_medium">
+  <label class="slds-form-element__label">Proposal For Repairs</label>
+  <lightning-input-rich-text 
+    data-id="proposal" 
+    onchange={handleRichTextChange}
+  
+    >
+  </lightning-input-rich-text>
+</div>
+
+  <lightning-accordion allow-multiple-sections-open>
+    <template for:each={formDataSections} for:item="formGroup">
+      <lightning-accordion-section
+        key={formGroup.type}
+        name={formGroup.type}
+        label={formGroup.type}>
+        <template for:each={formGroup.sections} for:item="section">
+          <div key={section.Label} class="estimate-section slds-m-bottom_medium slds-m-top_large">
+            <h3 class="slds-text-title_bold">{section.Label}</h3>
+  
+            <template for:each={section.Fields} for:item="fieldRow" for:index="index">
+              <div key={fieldRow} class="estimate-row slds-grid slds-wrap slds-gutters slds-m-bottom_x-small">
+                <template for:each={fieldRow} for:item="field">
+                  <template if:false={field.hide}>
+                    <div key={field.fieldLabel} class="slds-col slds-p-around_x-small">
+                      <label class="slds-form-element__label">
+                        {field.fieldLabel}
+                        <template if:true={field.required}>
+                          <abbr class="slds-required" title="required">*</abbr>
+                        </template>
+                      </label>
+  
+                      <!-- Dynamic Input -->
+                      <template if:true={field.isPicklist}>
+                        <lightning-combobox
+                          name="picklist"
+                          data-label={section.Label}
+                          data-index={index}
+                          data-field={field.fieldLabel}
+                          value={field.value}
+                          placeholder="Select an option"
+                          options={field.options}
+                          onchange={handleInputChangePicklist}
+                          data-type={formGroup.type}
+ 
+                          >
+                        </lightning-combobox>
+                      </template>
+  
+                      <template if:false={field.isPicklist}>
+                        <lightning-input
+                        data-type={formGroup.type}
+                        data-label={section.Label}
+                        data-field={field.fieldLabel}
+                        value={field.value}
+                        type={field.inputType}
+                        required={field.required}
+                        disabled={field.isDisabled}
+                        onchange={handleInputChangeDynamic}
+                        data-index={index}
+                          
+                          class="slds-m-top_xx-small"
+                          >
+                        </lightning-input>
+                      </template>
+                    </div>
+                  </template>
+                </template>
+  
+                <!-- Delete Button -->
+                <div class="slds-col slds-p-around_x-small slds-align-bottom slds-m-left_auto">
+                  <lightning-button
+                    label="Delete"
+                    variant="destructive"
+                    onclick={handleDeleteFieldDynamic}
+                    data-type={formGroup.type}
+                    data-label={section.Label}
+                    data-index={index}>
+                  </lightning-button>
+                </div>
+              </div>
+            </template>
+  
+            <!-- Add Button -->
+            <div class="slds-grid" key={section.Label}>
+              <div class="slds-m-left_auto">
+                <lightning-button
+                  label="Add"
+                  onclick={handleAddFieldDynamic}
+                   data-type={formGroup.type}
+  data-label={section.Label}
+                  class="slds-m-bottom_small">
+                </lightning-button>
+              </div>
+            </div>
+          </div>
+        </template>
+      </lightning-accordion-section>
+    </template>
+  </lightning-accordion>
+  
+
+
+          <!-- Discount Type Picklist -->
+<!-- Discount Type Picklist & Dynamic Input -->
+<div class="slds-grid slds-m-top_medium slds-gutters">
+  <!-- Discount Type -->
+  <div class="slds-col slds-size_1-of-4">
+    <label class="slds-form-element__label">Discount Type</label>
+    <lightning-combobox
+      name="discountType"
+      placeholder="Select..."
+      options={discountOptions}
+      value={selectedDiscountType}
+      onchange={handleDiscountChange}>
+    </lightning-combobox>
+  </div>
+
+  <!-- Conditional Input -->
+  <template if:true={showDiscountValue}>
+    <div class="slds-col slds-size_1-of-4">
+      <label class="slds-form-element__label">Value</label>
+      <lightning-input
+        type="number"
+        name="discountValue"
+        placeholder={discountPlaceholder}
+        value={discountValue}
+        onchange={handleDiscountValueChange}>
+      </lightning-input>
+    </div>
+  </template>
+</div>
+
+
+          
+          <!-- Summary Section -->
+          <div class="slds-m-top_medium">
+            <h3 class="slds-text-title_bold">Summary</h3>
+            <div class="slds-grid slds-wrap">
+              
+              <div class="slds-col slds-size_1-of-4 slds-p-around_small">
+                <div class="summary-box">
+                  <p class="slds-text-title">Net Total</p>
+                  <p class="slds-text-heading_large"> ₹{netTotal}</p>
+                </div>
+              </div>
+  
+              <div class="slds-col slds-size_1-of-4 slds-p-around_small">
+                <div class="summary-box">
+                  <p class="slds-text-title">Total Discount</p>
+                  <p class="slds-text-heading_large">-₹{totalDiscount}</p>
+                </div>
+              </div>
+  
+              <!-- TAX HAS TO BE ADDED -->
+              <!-- <div class="slds-col slds-size_1-of-4 slds-p-around_small">
+                <div class="summary-box">
+                  <p class="slds-text-title">Tax Amount</p>
+                  <p class="slds-text-heading_large">₹{taxAmount}</p>
+                </div>
+              </div> -->
+  
+              <div class="slds-col slds-size_1-of-4 slds-p-around_small">
+                <div class="summary-box">
+                  <p class="slds-text-title">Grand Total</p>
+                  <p class="slds-text-heading_large">₹{grandTotal}</p>
+                </div>
+              </div>
+  
+            </div>
+          </div>
+  
+          <!-- Buttons -->
+  <!-- Buttons aligned to the right -->
+  <div class="slds-m-top_medium slds-grid slds-grid_align-end">
+    <lightning-button label="Save as Draft" onclick={handleSaveClick} class="slds-m-right_small" variant="brand"></lightning-button>
+   <lightning-button label="Cancel" onclick={handleCloseModal} variant="destructive"></lightning-button>
+  </div>
+
+    </div>
+
+  </div>
+</section>
+      
+
+      
+  </template>
+</template>

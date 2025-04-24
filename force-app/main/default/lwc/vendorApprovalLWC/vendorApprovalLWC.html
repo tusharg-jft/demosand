@@ -1,0 +1,25 @@
+<template>
+    <lightning-card title="Submit Work Order for Approval">
+        <p style="padding-left: 20px; padding-right: 20px;">Before Assign work order to vendor please check Request Status is 'Approved'.</p>
+        <div class="slds-p-around_medium">
+            <!-- Display the table with vendor data -->
+            <lightning-datatable
+                data={vendorData}
+                columns={columns}
+                key-field="id"
+                onrowselection={handleRowSelection}
+                selected-rows={selectedVendors}>
+            </lightning-datatable>
+        
+            <!-- Submit button -->
+             <div class="slds-m-top_large">
+            <lightning-button
+                variant="brand"
+                label="Assign to Vendor"
+                onclick={handleSubmitApproval}
+                class="slds-m-top_medium">
+            </lightning-button>
+        </div>
+        </div>
+    </lightning-card>
+</template>

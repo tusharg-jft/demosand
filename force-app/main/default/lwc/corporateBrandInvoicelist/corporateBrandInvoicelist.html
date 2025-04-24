@@ -1,0 +1,43 @@
+<template>
+    <div style="border: 1px solid #D8D8D8; border-radius: 5px;">
+        <article class="slds-card">
+            <!-- Header -->
+            <div class="slds-card__header slds-grid slds-grid_align-spread slds-p-around_small">
+                <div class="slds-media slds-media_center slds-p-around_medium">
+                    <lightning-icon icon-name="standard:invoice" size="small"></lightning-icon>
+                    <span class="slds-m-left_small" style="font-weight: bold">Related Invoices</span>
+                </div>
+
+                <!-- Filters -->
+                <div class="slds-grid slds-grid_align-end slds-p-around_medium" style="gap: 1rem;">
+                    <lightning-combobox
+                        name="vendorFilter"
+                        label="Filter by Vendor"
+                        value={selectedVendor}
+                        options={vendorOptions}
+                        onchange={handleVendorChange}>
+                    </lightning-combobox>
+
+                    <lightning-combobox
+                        name="statusFilter"
+                        label="Filter by Status"
+                        value={selectedStatus}
+                        options={statusOptions}
+                        onchange={handleStatusChange}>
+                    </lightning-combobox>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="slds-scrollable_y" style="max-height: 400px;">
+                <lightning-datatable
+                    key-field="invoiceId"
+                    data={filteredInvoices}
+                    columns={columns}
+                    show-row-number-column
+                    hide-checkbox-column>
+                </lightning-datatable>
+            </div>
+        </article>
+    </div>
+</template>

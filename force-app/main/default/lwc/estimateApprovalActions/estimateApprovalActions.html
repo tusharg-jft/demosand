@@ -1,0 +1,18 @@
+<template>
+    <template if:true={showButtons}>
+        <div class="slds-m-horizontal_medium" style="text-align: right;">
+            <lightning-button
+                label="Accept"
+                data-action="approve"
+                onclick={handleAction}
+                class="slds-m-right_small">
+            </lightning-button>
+
+            <lightning-button
+                label="Reject"
+                data-action="reject"
+                onclick={handleAction}>
+            </lightning-button>
+        </div>
+    </template>
+</template>

@@ -1,0 +1,37 @@
+<template>
+    <lightning-card title="Assign Work Orders to project" icon-name="standard:work_order">
+        
+        <div class="slds-m-bottom_medium">
+        <lightning-input 
+            label="Search Work Order Number" 
+            value={searchQuery} 
+            onchange={handleSearchChange} 
+            placeholder="Search by Work Order Number...">
+        </lightning-input>
+        </div>
+
+        <template if:true={workOrders}>
+            <lightning-datatable
+                key-field="Id"
+                data={workOrders}
+                columns={columns}
+                checkbox-selection
+                onrowselection={handleSelectedRows}
+                selected-rows={selectedWorkOrders}>
+            </lightning-datatable>
+        </template>
+
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading"></lightning-spinner>
+        </template>
+
+        <template if:true={error}>
+            <p class="slds-text-color_error">{error}</p>
+        </template>
+
+        <div class="slds-button-group slds-m-top_medium">
+            <lightning-button label="Cancel" onclick={handleCancel} variant="neutral" class="slds-m-right_medium"></lightning-button>
+            <lightning-button label="Add" onclick={handleAdd} variant="brand"></lightning-button>
+        </div>
+    </lightning-card>
+</template>
