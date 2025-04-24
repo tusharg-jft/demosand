@@ -127,11 +127,15 @@ export default class EstimateModalButton extends LightningElement {
 
 
     this.loadRates();
+    if(this.passedinvoiceid){
 
-    getInvoiceStatus({ invoiceId: this.passedinvoiceid })
-    .then(data => {
-      this.invoiceStatusvalue = data;
-    });
+      getInvoiceStatus({ invoiceId: this.passedinvoiceid })
+      .then(data => {
+        this.invoiceStatusvalue = data;
+      });
+
+    }
+
   
 
 
@@ -157,7 +161,7 @@ export default class EstimateModalButton extends LightningElement {
         console.error('Error fetching data:', error);
       });
 
-    getExpenses({ invoiceId: this.passedinvoiceid }).then(data => {
+    getExpenses({ workOrderId: this.rec }).then(data => {
       // console.log("Raw Expenses Data: ", data);
       if (data && data.length > 0) {
         this.mergeExpensesIntoMaterial(data);

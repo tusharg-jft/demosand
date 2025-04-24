@@ -115,8 +115,9 @@ handleCloseModal() {
     console.log('Submitting Invoice:', invoiceId);
   
     
-    ({ invoiceId })
+    submitInvoiceForApproval({ invoiceId })
       .then(result => {
+        // console.log(result)
         this.dispatchEvent(new ShowToastEvent({
           title: 'Submitted',
           message: result,

@@ -126,11 +126,14 @@ discountOptions = [
 
 
     this.loadRates();
+if(this.passedestimateid){
 
-    getEStimateStatus({ estimateId: this.passedestimateid })
+  getEStimateStatus({ estimateId: this.passedestimateid })
   .then(data => {
     this.estimateStatusvalue = data;
   });
+}
+
 
 
               
