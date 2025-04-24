@@ -41,9 +41,8 @@ wiredInvoices({ data, error }) {
             rowNumber: index + 1, // Add row number starting from 1
             isPending: row.Status__c === 'Pending',
             isRejected: row.Status__c === 'Rejected',
-            isApproved: row.Status__c === 'Approved',
+            showviewinvoice: row.Status__c === 'Approved'|| row.Status__c === 'On Hold',
             isPaid: row.Status__c === 'Paid',
-            isOnHold: row.Status__c === 'On Hold'
         }));
 
         this.invoices = {
@@ -115,7 +114,8 @@ handleCloseModal() {
     const invoiceId = event.currentTarget.dataset.id;
     console.log('Submitting Invoice:', invoiceId);
   
-    submitInvoiceForApproval({ invoiceId })
+    
+    ({ invoiceId })
       .then(result => {
         this.dispatchEvent(new ShowToastEvent({
           title: 'Submitted',

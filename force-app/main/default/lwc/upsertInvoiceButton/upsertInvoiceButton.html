@@ -249,8 +249,35 @@ onclick={handleCloseModal} title="Close">
           <!-- Buttons -->
   <!-- Buttons aligned to the right -->
   <div class="slds-m-top_medium slds-grid slds-grid_align-end">
+
+
+    <template if:false={showRejectedButton}>
+
+    
     <lightning-button label="Save as Draft" onclick={handleSaveClick} class="slds-m-right_small" variant="brand"></lightning-button>
-   <lightning-button label="Cancel" onclick={handleCloseModal} variant="destructive"></lightning-button>
+  
+    <lightning-button 
+    label="Submit for approval" 
+    onclick={handleSaveClick} 
+    data-action="submit" 
+    class="slds-m-right_small" 
+    variant="brand">
+  </lightning-button>
+
+</template>
+
+  <template if:true={showRejectedButton}>
+    <lightning-button 
+      label="Send for review" 
+      onclick={handleSendForInvoiceReview} 
+      data-action="draft" 
+      class="slds-m-right_small" 
+      variant="brand">
+    </lightning-button>
+  </template>
+  
+  <lightning-button label="Cancel" onclick={handleCloseModal} variant="destructive"></lightning-button>
+  
   </div>
 
     </div>

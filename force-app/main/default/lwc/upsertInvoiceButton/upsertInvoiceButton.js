@@ -15,6 +15,10 @@ import getLatestInvoicePrices from '@salesforce/apex/InvoiceController.getLatest
 import getconstanttextinvoice from '@salesforce/apex/InvoiceController.getconstanttextinvoice';
 import deactivateExpenses from '@salesforce/apex/EstimateController.deactivateExpenses';
 import updateWorkOrder from '@salesforce/apex/EstimateController.updateWorkOrder';
+import getInvoiceStatus from '@salesforce/apex/InvoiceController.getInvoiceStatus';
+import updateCurrentInvoice from '@salesforce/apex/InvoiceController.updateCurrentInvoice';
+import submitInvoiceForApproval from '@salesforce/apex/InvoiceApprovalController.submitInvoiceForApproval';
+import makenewinvoiceafterrejection from '@salesforce/apex/InvoiceController.makenewinvoiceafterrejection';
 
 export default class EstimateModalButton extends LightningElement {
   showModal = false;
@@ -22,7 +26,7 @@ export default class EstimateModalButton extends LightningElement {
   @api recordId;
   @api existingEstimateData; // Property to receive existing estimate data
   @api rec
-  @api passedestimateid;
+  @api passedinvoiceid;
 
 
   @track formData = {}; // Holds user input and merged data
@@ -102,6 +106,12 @@ export default class EstimateModalButton extends LightningElement {
     return sections;
   }
 
+  get showRejectedButton() {
+    return this.invoiceStatusvalue === 'Rejected';
+}
+
+
+  
   getPicklistOptions(fieldLabel) {
     return this.picklistOptionsMap[fieldLabel] || [];
   }
@@ -117,6 +127,12 @@ export default class EstimateModalButton extends LightningElement {
 
 
     this.loadRates();
+
+    getInvoiceStatus({ invoiceId: this.passedinvoiceid })
+    .then(data => {
+      this.invoiceStatusvalue = data;
+    });
+  
 
 
     getEstimateModalInfo({ workorderid: this.recordId })
@@ -141,7 +157,7 @@ export default class EstimateModalButton extends LightningElement {
         console.error('Error fetching data:', error);
       });
 
-    getExpenses({ invoiceId: this.passedestimateid }).then(data => {
+    getExpenses({ invoiceId: this.passedinvoiceid }).then(data => {
       // console.log("Raw Expenses Data: ", data);
       if (data && data.length > 0) {
         this.mergeExpensesIntoMaterial(data);
@@ -153,9 +169,9 @@ export default class EstimateModalButton extends LightningElement {
     if (this.type == "edit") {
       console.log("Inside the IF" , this.type)
 
-      console.log("i am the passed id " ,this.passedestimateid );
+      console.log("i am the passed id " ,this.passedinvoiceid );
 
-      getLatestInvoicedData({ invoiceId: this.passedestimateid })
+      getLatestInvoicedData({ invoiceId: this.passedinvoiceid })
         .then(data => {
           try {
             console.log("Raw Estimate Data:", data);
@@ -178,7 +194,7 @@ export default class EstimateModalButton extends LightningElement {
           console.error("Error fetching Estimate Data:", error);
         });
 
-        getLatestInvoicePrices({ invoiceId: this.passedestimateid }).then((data) => {
+        getLatestInvoicePrices({ invoiceId: this.passedinvoiceid }).then((data) => {
         console.log("get price list ", data)
         this.grandTotal = data.GrandTotal;
         this.netTotal = data.NetPrice;
@@ -192,7 +208,7 @@ export default class EstimateModalButton extends LightningElement {
         console.log(error)
       })
 
-      getconstanttextinvoice({ invoiceId: this.passedestimateid })
+      getconstanttextinvoice({ invoiceId: this.passedinvoiceid })
               .then((data) => {
                   this.assessmentText = data.AssessmentTroubleshoot;
                   this.proposalText = data.ProposalForRepairs;
@@ -551,6 +567,18 @@ export default class EstimateModalButton extends LightningElement {
                   'Emergency Rate': vtrmData[0].Emergency_Rate__c,
                   'Weekend Emergency Rate': vtrmData[0].Weekend_Emergency_Rate__c,
                 };
+              }
+              else{
+                this.rates = {
+                  'Regular Rate': 0,
+                'After Hours Rate': 0,
+                'Weekend Rate': 0,
+                'Holiday Rate':0,
+                'Emergency Rate': 0,
+                'Weekend Emergency Rate': 0,
+                };
+              }
+
 
 
 
@@ -564,7 +592,6 @@ export default class EstimateModalButton extends LightningElement {
                 this.addPicklistFlags(); // 🔄 Update fields
 
                 // console.log("this is an option",this.options)
-              }
             })
             .catch(error => {
               console.error('Error fetching VTRM records:', error);
@@ -690,19 +717,26 @@ export default class EstimateModalButton extends LightningElement {
       });
     });
   
-    this.netTotal = total.toFixed(2);
+    // Round and store net total
+    this.netTotal = parseFloat(total.toFixed(2));
   
-    // Automatically update grandTotal
+    // Round and store discount
     if (this.selectedDiscountType === 'Flat') {
-      this.totalDiscount = this.discountValue || 0;
+      this.totalDiscount = parseFloat((this.discountValue || 0).toFixed(2));
     } else if (this.selectedDiscountType === 'Percentage') {
-      this.totalDiscount = (this.netTotal * (this.discountValue || 0)) / 100;
+      this.totalDiscount = parseFloat(
+        ((this.netTotal * (this.discountValue || 0)) / 100).toFixed(2)
+      );
     } else {
       this.totalDiscount = 0;
     }
   
-    this.grandTotal = (this.netTotal - this.totalDiscount).toFixed(2);
+    // Round and store grand total
+    this.grandTotal = parseFloat(
+      (this.netTotal - this.totalDiscount).toFixed(2)
+    );
   }
+  
   
 
 
@@ -749,18 +783,21 @@ export default class EstimateModalButton extends LightningElement {
             // Determine if it's a numeric field with zero value
             const isZero = field.inputType === 'number' && parseFloat(value) === 0;
   
+            // Mark that there's at least one non-zero/non-empty value
             if (value && !isZero) {
               hasAtLeastOneValidValue = true;
               allValuesZeroOrEmpty = false;
               rowHasValue = true;
             }
   
-            if (!value && field.required) {
+            // ✅ Skip 'Id' field from required check
+            if (!value && field.required && field.fieldLabel.toLowerCase() !== 'id') {
               rowIsComplete = false;
               missingFields.push(field.fieldLabel);
             }
           }
   
+          // 🚨 If any row is partially filled but missing required fields
           if (rowHasValue && !rowIsComplete) {
             this.dispatchEvent(new ShowToastEvent({
               title: 'Incomplete Row',
@@ -773,7 +810,7 @@ export default class EstimateModalButton extends LightningElement {
       }
     }
   
-    // 🔴 Block if literally everything is empty or 0
+    // ❌ Block if everything is empty or 0
     if (!hasAtLeastOneValidValue || allValuesZeroOrEmpty) {
       this.dispatchEvent(new ShowToastEvent({
         title: 'Validation Error',
@@ -786,89 +823,6 @@ export default class EstimateModalButton extends LightningElement {
     return true;
   }
   
-
-  handleSaveClick() {
-    if (!this.validateFormData()) {
-      return;
-    }
-    console.log("jai shree ram ")
-
-    const formattedData = {};
-    const expenseIdList = [];
-
-    console.log(expenseIdList);
-
-
-    Object.keys(this.formData).forEach(sectionType => {
-      formattedData[sectionType] = this.formData[sectionType].map(section => {
-        if (sectionType === 'Incurred' && section.Label === 'Material') {
-          section.Fields.forEach(row => {
-            row.forEach(field => {
-              if (field.fieldLabel === 'Id' && field.value) {
-                expenseIdList.push(field.value);
-              }
-            });
-          });
-        }
-        return {
-          Label: section.Label,
-          Fields: section.Fields.map(fieldRow =>
-            fieldRow.map(field => ({
-              fieldLabel: field.fieldLabel,
-              value: field.value
-            }))
-          )
-        };
-      });
-    });
-
-    if (this.type === 'add') {
-      updateWorkOrder({
-        workOrderId: this.rec,
-        assessmentTroubleshoot: this.assessmentText,
-        proposalForRepairs: this.proposalText,
-        internalEstimateNo: this.internalEstimateNumber
-      });
-    }
-
-    deactivateExpenses({ expenseIds: expenseIdList })
-      .then(() => {
-        return createInvoiceRecord({
-          formData: JSON.stringify(formattedData),
-          workOrderId: this.rec,
-          netPrice: parseFloat(this.netTotal),
-          totalDiscount: parseFloat(this.totalDiscount),
-          grandTotal: parseFloat(this.grandTotal),
-          internalnumber: this.internalEstimateNumber,
-          assesment: this.assessmentText,
-          proposal: this.proposalText
-        });
-      })
-      .then((rec) => {
-        this.dispatchEvent(new ShowToastEvent({
-          title: 'Success',
-          message: "Invoice created successfully!",
-          variant: 'success'
-        }));
-        this.handleCloseModal();
-        this.dispatchEvent(new CustomEvent('refreshdata'));
-      })
-      .catch((error) => {
-        this.dispatchEvent(new ShowToastEvent({
-          title: 'Error',
-          message: error.body ? error.body.message : error.message,
-          variant: 'error'
-        }));
-      });
-  }
-  
-
-
-
-
-
-
-
   handleDiscountChange(event) {
     console.log("handleDiscountChange=================================================")
     this.selectedDiscountType = event.detail.value;
@@ -901,18 +855,21 @@ export default class EstimateModalButton extends LightningElement {
   // ✅ Extracted logic for reusability
   recalculateDiscount() {
     if (this.selectedDiscountType === 'Flat') {
-      this.totalDiscount = this.discountValue;
+      this.totalDiscount = parseFloat((this.discountValue || 0).toFixed(2));
     } else if (this.selectedDiscountType === 'Percentage') {
-      this.totalDiscount = (this.netTotal * this.discountValue) / 100;
+      this.totalDiscount = parseFloat(
+        ((this.netTotal * (this.discountValue || 0)) / 100).toFixed(2)
+      );
     } else {
       this.totalDiscount = 0;
     }
-
-    this.grandTotal = this.netTotal - this.totalDiscount;
-
-    console.log('total discount test1 :', this.totalDiscount);
-    console.log('grand total test2 :', this.grandTotal);
+  
+    this.grandTotal = parseFloat(
+      (this.netTotal - this.totalDiscount).toFixed(2)
+    );
   }
+  
+ 
   handleRichTextChange(event) {
     const field = event.target.dataset.id;
     const rawHtml = event.target.value;
@@ -933,6 +890,252 @@ export default class EstimateModalButton extends LightningElement {
     this.internalEstimateNumber = event.target.value;
     // console.log('Internal Estimate No:', this.internalEstimateNumber);
   }
+
+  handleSaveClick(event) {
+    const actionType = event.currentTarget.dataset.action;
+  
+    if (!this.validateFormData()) return;
+  
+    const formattedData = {};
+    const expenseIdList = [];
+  
+    Object.keys(this.formData).forEach(sectionType => {
+      formattedData[sectionType] = this.formData[sectionType].map(section => {
+        if (sectionType === 'Incurred' && section.Label === 'Material') {
+          section.Fields.forEach(row => {
+            row.forEach(field => {
+              if (field.fieldLabel === 'Id' && field.value) {
+                expenseIdList.push(field.value);
+              }
+            });
+          });
+        }
+  
+        return {
+          Label: section.Label,
+          Fields: section.Fields.map(fieldRow =>
+            fieldRow.map(field => ({
+              fieldLabel: field.fieldLabel,
+              value: field.value
+            }))
+          )
+        };
+      });
+    });
+    updateWorkOrder({
+      workOrderId: this.rec,
+      assessmentTroubleshoot: this.assessmentText,
+      proposalForRepairs: this.proposalText,
+      internalEstimateNo: this.internalEstimateNumber
+    });
+  
+    if (this.type === "add") {
+      this.estimateStatus = "Draft";
+    }
+  
+    deactivateExpenses({ expenseIds: expenseIdList })
+      .then(() => {
+        if (this.type === "edit") {
+          return getInvoiceStatus({ invoiceId: this.passedinvoiceid })
+            .then(data => {
+              this.invoiceStatusvalue = data;
+  
+              if (this.invoiceStatusvalue === "Pending") {
+                // console.log("invoiceStatusvalue" , this.invoiceStatusvalue ,"and type" , this.type)
+                // console.log("updating the estimate")
+
+
+                return updateCurrentInvoice({
+                  invoiceId: this.passedinvoiceid,
+                  formData: JSON.stringify(formattedData),
+                  netPrice: parseFloat(this.netTotal),
+            totalDiscount: parseFloat(this.totalDiscount),
+            grandTotal: parseFloat(this.grandTotal),
+            internalnumber: this.internalEstimateNumber,
+            assesment: this.assessmentText,
+            proposal: this.proposalText,
+                });
+              }
+            });
+        } else {
+
+          return createInvoiceRecord({
+            formData: JSON.stringify(formattedData),
+            workOrderId: this.rec,
+            netPrice: parseFloat(this.netTotal),
+            totalDiscount: parseFloat(this.totalDiscount),
+            grandTotal: parseFloat(this.grandTotal),
+            internalnumber: this.internalEstimateNumber,
+            assesment: this.assessmentText,
+            proposal: this.proposalText
+          });
+  
+     
+  
+        }
+      })
+      .then(responseid => {
+        if (!responseid) return; // skip if update wasn't needed
+  
+        if (actionType === 'submit') {
+          return submitInvoiceForApproval({ invoiceId: responseid })
+            .then(result => {
+              this.dispatchEvent(new ShowToastEvent({
+                title: 'Submitted',
+                message: result,
+                variant: 'success'
+              }));
+              
+              // Dispatch refresh event after successful submission
+              this.dispatchEvent(new CustomEvent('estimatechanged', {
+                bubbles: true,
+                composed: true
+              }));
+            });
+        } else {
+          
+  
+          this.dispatchEvent(new ShowToastEvent({
+            title: 'Success',
+            message: `invoice created successfully!`,
+            variant: 'success'
+          }));
+  
+  
+          console.log("Calling new event=====")
+  
+          
+          // Dispatch refresh event after successful save as draft
+          this.dispatchEvent(new CustomEvent('estimatechanged', {
+            bubbles: true,
+            composed: true
+          }));
+        }
+  
+        this.handleCloseModal();
+      })
+      .catch(error => {
+        this.dispatchEvent(new ShowToastEvent({
+          title: 'Error',
+          message: error.body ? error.body.message : error.message,
+          variant: 'error'
+        }));
+      });
+  }
+
+  handleSendForInvoiceReview(event) {
+    console.log("🚀 Starting handleSendForInvoiceReview");
+  
+    if (!this.validateFormData()) {
+      console.warn("❌ Form validation failed. Exiting early.");
+      return;
+    }
+  
+    this.invoiceStatus = 'Hold'; // ✅ Set invoice status explicitly
+    console.log("📝 Invoice status set to:", this.invoiceStatus);
+  
+    const formattedData = {};
+    const expenseIdList = [];
+  
+    console.log("📦 Formatting formData for invoice...");
+    Object.keys(this.formData).forEach(sectionType => {
+      formattedData[sectionType] = this.formData[sectionType].map(section => {
+        if (sectionType === 'Incurred' && section.Label === 'Material') {
+          section.Fields.forEach(row => {
+            row.forEach(field => {
+              if (field.fieldLabel === 'Id' && field.value) {
+                expenseIdList.push(field.value);
+              }
+            });
+          });
+        }
+  
+        return {
+          Label: section.Label,
+          Fields: section.Fields.map(fieldRow =>
+            fieldRow.map(field => ({
+              fieldLabel: field.fieldLabel,
+              value: field.value
+            }))
+          )
+        };
+      });
+    });
+  
+    console.log("✅ Formatted Invoice Data:", formattedData);
+    console.log("📑 Expense IDs to deactivate for invoice:", expenseIdList);
+  
+    console.log("🔄 Updating Work Order info related to invoice...");
+    updateWorkOrder({
+      workOrderId: this.rec,
+      assessmentTroubleshoot: this.assessmentText,
+      proposalForRepairs: this.proposalText,
+      internalInvoiceNo: this.internalInvoiceNumber
+    });
+  
+    console.log("🛑 Deactivating expenses for invoice...");
+    deactivateExpenses({ expenseIds: expenseIdList })
+      .then(() => {
+        console.log("✅ Expenses deactivated. Creating new invoice...");
+  
+        const payload = {
+          formData: JSON.stringify(formattedData),
+          workOrderId: this.rec,
+          netPrice: parseFloat(this.netTotal),
+          totalDiscount: parseFloat(this.totalDiscount),
+          grandTotal: parseFloat(this.grandTotal),
+          internalnumber: this.internalInvoiceNumber,
+          assesment: this.assessmentText,
+          proposal: this.proposalText,
+          parentInvoiceId: this.passedinvoiceid
+        };
+  
+        console.log("📦 Payload for makenewinvoiceafterrejection:", payload);
+  
+        return makenewinvoiceafterrejection(payload);
+      })
+      .then(responseid => {
+        if (!responseid) {
+          console.warn("⚠️ No invoice ID returned. Skipping submission.");
+          return;
+        }
+  
+        console.log("✅ New invoice created with ID:", responseid);
+        console.log("🚀 Submitting new invoice for approval...");
+  
+        return submitInvoiceForApproval({ invoiceId: responseid })
+          .then(result => {
+            console.log("🎉 Invoice submitted for approval");
+  
+            this.dispatchEvent(new ShowToastEvent({
+              title: 'Submitted',
+              message: result,
+              variant: 'success'
+            }));
+  
+            this.dispatchEvent(new CustomEvent('invoicechanged', {
+              bubbles: true,
+              composed: true
+            }));
+          });
+      })
+      .catch(error => {
+        console.error("❌ Error occurred during invoice submission:", error);
+  
+        this.dispatchEvent(new ShowToastEvent({
+          title: 'Error',
+          message: error.body ? error.body.message : error.message,
+          variant: 'error'
+        }));
+      })
+      .finally(() => {
+        console.log("🔚 Closing invoice modal...");
+        this.handleCloseModal();
+      });
+  }
+  
+
+
 
 
 

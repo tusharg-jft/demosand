@@ -277,9 +277,90 @@ public class InvoiceController {
         }
     }
 
-
+    @AuraEnabled
+    public static Id updateCurrentInvoice(String formData,  Decimal netPrice, Decimal grandTotal, Decimal totalDiscount , Integer internalnumber , String assesment  , String proposal , Id invoiceId) {
+        try {
+            Invoice__c existingInvoice = [
+                SELECT Id 
+                FROM Invoice__c 
+                WHERE Id = :invoiceId
+            ];
+    
+            existingInvoice.Estimate_Data__c = formData;
+            existingInvoice.netTotal__c = netPrice;
+            existingInvoice.grandTotal__c = grandTotal;
+            existingInvoice.totalDiscount__c = totalDiscount;
+            existingInvoice.Internal_Estimate_No__c = internalnumber;
+            existingInvoice.Assessment_Troubleshoot__c = assesment;
+            existingInvoice.Proposal_For_Repairs__c = proposal;
+    
+    
+            update existingInvoice;
+    
+            return existingInvoice.Id;
+        } catch (Exception e) {
+            throw new AuraHandledException('Error updating Estimate: ' + e.getMessage());
+        }
+    }
+    
   
+    @AuraEnabled(cacheable=true)
+    public static String getInvoiceStatus(Id invoiceId){
+    
+        Invoice__c invoice = [
+                SELECT 
+                       Status__c
+                FROM Invoice__c
+                WHERE Id = :invoiceId
+            ];
+        
+            return invoice.Status__c;
+    }
+    
+    @AuraEnabled
+    public static Id makenewinvoiceafterrejection(
+        String formData,
+        Id workOrderId,
+        Decimal netPrice,
+        Decimal grandTotal,
+        Decimal totalDiscount,
+        Integer internalnumber,
+        String assesment,
+        String proposal,
+        Id parentInvoiceId
+    ) {
+        Id finalInvoiceId = parentInvoiceId;
 
+        if (parentInvoiceId != null) {
+            Invoice__c parentInvoice = [
+                SELECT Id, parentinvoice__c
+                FROM Invoice__c
+                WHERE Id = :parentInvoiceId
+                LIMIT 1
+            ];
+            parentInvoice.display__c='no';
+            update parentInvoice;
+
+            if (parentInvoice.parentinvoice__c != null) {
+                finalInvoiceId = parentInvoice.parentinvoice__c;
+            }
+        }
+
+        Invoice__c newInvoice = new Invoice__c();
+        newInvoice.Estimate_Data__c = formData;
+        newInvoice.Work_Orders__c = workOrderId;
+        newInvoice.netTotal__c = netPrice;
+        newInvoice.grandTotal__c = grandTotal;
+        newInvoice.totalDiscount__c = totalDiscount;
+        newInvoice.Internal_Estimate_No__c = internalnumber;
+        newInvoice.Assessment_Troubleshoot__c = assesment;
+        newInvoice.Proposal_For_Repairs__c = proposal;
+        newInvoice.parentinvoice__c = finalInvoiceId;
+        newInvoice.Status__c = 'Pending';
+
+        insert newInvoice;
+        return newInvoice.Id;
+    }
 
 
    

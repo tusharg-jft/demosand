@@ -742,66 +742,7 @@ formatAddress(addressObj) {
       .join(', ');
 }
 
-// validateFormData() {
-//   let hasAtLeastOneValidValue = false;
-//   let allValuesZeroOrEmpty = true;
 
-//   for (const sectionType in this.formData) {
-//     const sections = this.formData[sectionType];
-
-//     for (const section of sections) {
-//       const sectionLabel = section.Label;
-
-//       for (let rowIndex = 0; rowIndex < section.Fields.length; rowIndex++) {
-//         const row = section.Fields[rowIndex];
-
-//         let rowHasValue = false;
-//         let rowIsComplete = true;
-//         let missingFields = [];
-
-//         for (const field of row) {
-//           const rawValue = field.value;
-//           const value = rawValue && rawValue.toString().trim();
-
-//           // Determine if it's a numeric field with zero value
-//           const isZero = field.inputType === 'number' && parseFloat(value) === 0;
-
-//           if (value && !isZero) {
-//             hasAtLeastOneValidValue = true;
-//             allValuesZeroOrEmpty = false;
-//             rowHasValue = true;
-//           }
-
-//           if (!value && field.required) {
-//             rowIsComplete = false;
-//             missingFields.push(field.fieldLabel);
-//           }
-//         }
-
-//         if (rowHasValue && !rowIsComplete) {
-//           this.dispatchEvent(new ShowToastEvent({
-//             title: 'Incomplete Row',
-//             message: `In section "${sectionLabel}", row ${rowIndex + 1}, missing fields: ${missingFields.join(', ')}`,
-//             variant: 'error',
-//           }));
-//           return false;
-//         }
-//       }
-//     }
-//   }
-
-//   // 🔴 Block if literally everything is empty or 0
-//   if (!hasAtLeastOneValidValue || allValuesZeroOrEmpty) {
-//     this.dispatchEvent(new ShowToastEvent({
-//       title: 'Validation Error',
-//       message: 'Please add some values before creating an Estimate.',
-//       variant: 'error',
-//     }));
-//     return false;
-//   }
-
-//   return true;
-// }
 validateFormData() {
   let hasAtLeastOneValidValue = false;
   let allValuesZeroOrEmpty = true;

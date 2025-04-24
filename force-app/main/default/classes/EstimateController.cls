@@ -395,6 +395,7 @@ public static Object getIncurredData(Id workOrderId) {
          SELECT Id, Name, Estimate__c, grandTotal__c, netTotal__c, Status__c, totalDiscount__c 
          FROM Invoice__c
          WHERE Work_Orders__c = :workOrderId
+          AND display__c = 'yes'
          ORDER BY CreatedDate DESC
      ];
  }
