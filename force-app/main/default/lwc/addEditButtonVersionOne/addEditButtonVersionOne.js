@@ -19,6 +19,7 @@ import deactivateExpenses from '@salesforce/apex/EstimateController.deactivateEx
 import updateWorkOrder from '@salesforce/apex/EstimateController.updateWorkOrder';
 import getEStimateStatus from '@salesforce/apex/EstimateController.getEStimateStatus';
 import updateCurrentEstimate from '@salesforce/apex/EstimateController.updateCurrentEstimate';
+import makenewestimateafterrejection from '@salesforce/apex/EstimateController.makenewestimateafterrejection';
 
 export default class EstimateModalButton extends LightningElement {
   showModal = false;
@@ -108,6 +109,10 @@ discountOptions = [
   getPicklistOptions(fieldLabel) {
     return this.picklistOptionsMap[fieldLabel] || [];
   }
+  get showRejectedButton() {
+    return this.estimateStatusvalue === 'Rejected';
+}
+
 
   connectedCallback() {
     // console.log("testing 1")
@@ -121,6 +126,12 @@ discountOptions = [
 
 
     this.loadRates();
+
+    getEStimateStatus({ estimateId: this.passedestimateid })
+  .then(data => {
+    this.estimateStatusvalue = data;
+  });
+
 
               
     getEstimateModalInfo({ workorderid: this.recordId })
@@ -690,19 +701,26 @@ calculateGrandTotal() {
     });
   });
 
-  this.netTotal = total.toFixed(2);
+  // Round and store net total
+  this.netTotal = parseFloat(total.toFixed(2));
 
-  // Automatically update grandTotal
+  // Round and store discount
   if (this.selectedDiscountType === 'Flat') {
-    this.totalDiscount = this.discountValue || 0;
+    this.totalDiscount = parseFloat((this.discountValue || 0).toFixed(2));
   } else if (this.selectedDiscountType === 'Percentage') {
-    this.totalDiscount = (this.netTotal * (this.discountValue || 0)) / 100;
+    this.totalDiscount = parseFloat(
+      ((this.netTotal * (this.discountValue || 0)) / 100).toFixed(2)
+    );
   } else {
     this.totalDiscount = 0;
   }
 
-  this.grandTotal = (this.netTotal - this.totalDiscount).toFixed(2);
+  // Round and store grand total
+  this.grandTotal = parseFloat(
+    (this.netTotal - this.totalDiscount).toFixed(2)
+  );
 }
+
 
 
 
@@ -724,6 +742,66 @@ formatAddress(addressObj) {
       .join(', ');
 }
 
+// validateFormData() {
+//   let hasAtLeastOneValidValue = false;
+//   let allValuesZeroOrEmpty = true;
+
+//   for (const sectionType in this.formData) {
+//     const sections = this.formData[sectionType];
+
+//     for (const section of sections) {
+//       const sectionLabel = section.Label;
+
+//       for (let rowIndex = 0; rowIndex < section.Fields.length; rowIndex++) {
+//         const row = section.Fields[rowIndex];
+
+//         let rowHasValue = false;
+//         let rowIsComplete = true;
+//         let missingFields = [];
+
+//         for (const field of row) {
+//           const rawValue = field.value;
+//           const value = rawValue && rawValue.toString().trim();
+
+//           // Determine if it's a numeric field with zero value
+//           const isZero = field.inputType === 'number' && parseFloat(value) === 0;
+
+//           if (value && !isZero) {
+//             hasAtLeastOneValidValue = true;
+//             allValuesZeroOrEmpty = false;
+//             rowHasValue = true;
+//           }
+
+//           if (!value && field.required) {
+//             rowIsComplete = false;
+//             missingFields.push(field.fieldLabel);
+//           }
+//         }
+
+//         if (rowHasValue && !rowIsComplete) {
+//           this.dispatchEvent(new ShowToastEvent({
+//             title: 'Incomplete Row',
+//             message: `In section "${sectionLabel}", row ${rowIndex + 1}, missing fields: ${missingFields.join(', ')}`,
+//             variant: 'error',
+//           }));
+//           return false;
+//         }
+//       }
+//     }
+//   }
+
+//   // 🔴 Block if literally everything is empty or 0
+//   if (!hasAtLeastOneValidValue || allValuesZeroOrEmpty) {
+//     this.dispatchEvent(new ShowToastEvent({
+//       title: 'Validation Error',
+//       message: 'Please add some values before creating an Estimate.',
+//       variant: 'error',
+//     }));
+//     return false;
+//   }
+
+//   return true;
+// }
 validateFormData() {
   let hasAtLeastOneValidValue = false;
   let allValuesZeroOrEmpty = true;
@@ -748,18 +826,21 @@ validateFormData() {
           // Determine if it's a numeric field with zero value
           const isZero = field.inputType === 'number' && parseFloat(value) === 0;
 
+          // Mark that there's at least one non-zero/non-empty value
           if (value && !isZero) {
             hasAtLeastOneValidValue = true;
             allValuesZeroOrEmpty = false;
             rowHasValue = true;
           }
 
-          if (!value && field.required) {
+          // ✅ Skip 'Id' field from required check
+          if (!value && field.required && field.fieldLabel.toLowerCase() !== 'id') {
             rowIsComplete = false;
             missingFields.push(field.fieldLabel);
           }
         }
 
+        // 🚨 If any row is partially filled but missing required fields
         if (rowHasValue && !rowIsComplete) {
           this.dispatchEvent(new ShowToastEvent({
             title: 'Incomplete Row',
@@ -772,7 +853,7 @@ validateFormData() {
     }
   }
 
-  // 🔴 Block if literally everything is empty or 0
+  // ❌ Block if everything is empty or 0
   if (!hasAtLeastOneValidValue || allValuesZeroOrEmpty) {
     this.dispatchEvent(new ShowToastEvent({
       title: 'Validation Error',
@@ -786,142 +867,6 @@ validateFormData() {
 }
 
 
-
-
-
-
-
-//Done
-// handleSaveClick(event) {
-
-//   const actionType = event.currentTarget.dataset.action;
-
-//   console.log("checking the validations test14")
-//   if (!this.validateFormData()) {
-//     return;
-//   }
-//   const formattedData = {};
-//   const expenseIdList = [];
-//   console.log("testing123")
-
-//   Object.keys(this.formData).forEach(sectionType => {
-//     formattedData[sectionType] = this.formData[sectionType].map(section => {
-//       const filteredFields = section.Fields.filter(fieldRow => {
-//           return fieldRow.some(field => {
-//               const val = field.value;
-//               if (typeof val === 'string') return val.trim() !== '' && val !== '0';
-//               if (typeof val === 'number') return val !== 0;
-//               return !!val;
-//           });
-//       });
-  
-//       return {
-//           Label: section.Label,
-//           Fields: filteredFields.map(fieldRow =>
-//               fieldRow.map(field => ({
-//                   fieldLabel: field.fieldLabel,
-//                   value: field.value
-//               }))
-//           )
-//       };
-//   });
-  
-//   });
-
-//   updateWorkOrder({workOrderId:this.rec , assessmentTroubleshoot:this.assessmentText , proposalForRepairs:this.proposalText , internalEstimateNo:this.internalEstimateNumber })
-
-//   // console.log('🟢 Collected Material Expense Ids:', expenseIdList);
-
-//   // ✅ Call Apex to deactivate the old Expenses first
-
-//   if(this.type==="add"){
-//     this.estimateStatus = "Draft"
-//   }
- 
-//   deactivateExpenses({ expenseIds: expenseIdList })
-//     .then(() => {
-//       console.log("i am the type ",this.type)
-//       // console.log('✅ Expenses deactivated');
-//       if(this.type==="edit"){
-//         console.log("inside edit")
-//        getEStimateStatus({estimateId:this.passedestimateid}).then(data=>{
-//         console.log("i am the data" , data)
-//         this.estimateStatusvalue = data;
-//         console.log("jai shree ram test 1" , this.estimateStatusvalue)
-//         if(this.estimateStatusvalue==="Draft"){
-
-//          console.log("inside draft ")
-
-//     return updateCurrentEstimate({
-//      estimateId:this.passedestimateid,
-//      formData: JSON.stringify(formattedData),
-//      workOrderId: this.rec,
-//      netPrice: parseFloat(this.netTotal),
-//      totalDiscount: parseFloat(this.totalDiscount),
-//      grandTotal: parseFloat(this.grandTotal),
-//      internalnumber: this.internalEstimateNumber,
-//      assesment: this.assessmentText,
-//      proposal: this.proposalText,
-//      estimateStatus:this.estimateStatus
-//    })
-//         }
-       
-//       })      
-//        }
-//       console.log(" the type is add")
-//       return createEstimateRecord({
-//         formData: JSON.stringify(formattedData),
-//         workOrderId: this.rec,
-//         netPrice: parseFloat(this.netTotal),
-//         totalDiscount: parseFloat(this.totalDiscount),
-//         grandTotal: parseFloat(this.grandTotal),
-//         internalnumber: this.internalEstimateNumber,
-//         assesment: this.assessmentText,
-//         proposal: this.proposalText,
-//         estimateStatus:this.estimateStatus
-//       });
-//     })
-//     .then((responseid) => {
-//       // console.log("getting in return ",responseid)
-//       if (actionType === 'submit') {
-
-//         submitForApproval({ estimateId: responseid })
-//                   .then(result => {
-//                       console.log('Apex Response:', result);
-//                       this.dispatchEvent(new ShowToastEvent({
-//                           title: 'Submitted',
-//                           message: result,
-//                           variant: 'success'
-//                       }));
-//                   })
-//                   .catch(error => {
-//                       console.error('Error submitting for approval', error);
-//                       this.dispatchEvent(new ShowToastEvent({
-//                           title: 'Error',
-//                           message: error.body?.message || 'Unexpected error',
-//                           variant: 'error'
-//                       }));
-//                   })   
-//       }else{
-//         this.dispatchEvent(new ShowToastEvent({
-//           title: 'Success',
-//           message: `Estimate created successfully!`,
-//           variant: 'success',
-//         }));
-//       }
-      
-//       this.handleCloseModal();
-//     })
-//     .catch((error) => {
-//       this.dispatchEvent(new ShowToastEvent({
-//         title: 'Error',
-//         message: error.body ? error.body.message : error.message,
-//         variant: 'error',
-//       }));
-//     });
-//     // window.location.reload();
-
-// }
 
 handleSaveClick(event) {
   const actionType = event.currentTarget.dataset.action;
@@ -1077,8 +1022,115 @@ handleSaveClick(event) {
     });
 }
 
+handleSendForReview(event) {
+  console.log("🚀 Starting handleSendForReview");
 
+  if (!this.validateFormData()) {
+    console.warn("❌ Form validation failed. Exiting early.");
+    return;
+  }
 
+  this.estimateStatus = 'Submitted_For_Approval'; // ✅ Set status explicitly
+  console.log("📝 Estimate status set to:", this.estimateStatus);
+
+  const formattedData = {};
+  const expenseIdList = [];
+
+  console.log("📦 Formatting formData...");
+  Object.keys(this.formData).forEach(sectionType => {
+    formattedData[sectionType] = this.formData[sectionType].map(section => {
+      if (sectionType === 'Incurred' && section.Label === 'Material') {
+        section.Fields.forEach(row => {
+          row.forEach(field => {
+            if (field.fieldLabel === 'Id' && field.value) {
+              expenseIdList.push(field.value);
+            }
+          });
+        });
+      }
+
+      return {
+        Label: section.Label,
+        Fields: section.Fields.map(fieldRow =>
+          fieldRow.map(field => ({
+            fieldLabel: field.fieldLabel,
+            value: field.value
+          }))
+        )
+      };
+    });
+  });
+  console.log("✅ Formatted Data:", formattedData);
+  console.log("📑 Expense IDs to deactivate:", expenseIdList);
+
+  console.log("🔄 Updating Work Order info...");
+  updateWorkOrder({
+    workOrderId: this.rec,
+    assessmentTroubleshoot: this.assessmentText,
+    proposalForRepairs: this.proposalText,
+    internalEstimateNo: this.internalEstimateNumber
+  });
+
+  console.log("🛑 Deactivating expenses...");
+  deactivateExpenses({ expenseIds: expenseIdList })
+    .then(() => {
+      console.log("✅ Expenses deactivated. Creating new estimate...");
+
+      const payload = {
+        formData: JSON.stringify(formattedData),
+        workOrderId: this.rec,
+        netPrice: parseFloat(this.netTotal),
+        totalDiscount: parseFloat(this.totalDiscount),
+        grandTotal: parseFloat(this.grandTotal),
+        internalnumber: this.internalEstimateNumber,
+        assesment: this.assessmentText,
+        proposal: this.proposalText,
+        parentEstimateId: this.passedestimateid
+      };
+
+      console.log("📦 Payload for makenewestimateafterrejection:", payload);
+
+      return makenewestimateafterrejection(payload);
+    })
+    .then(responseid => {
+      if (!responseid) {
+        console.warn("⚠️ No estimate ID returned. Skipping submission.");
+        return;
+      }
+
+      console.log("✅ New estimate created with ID:", responseid);
+      console.log("🚀 Submitting new estimate for approval...");
+
+      return submitForApproval({ estimateId: responseid })
+        .then(result => {
+          console.log("🎉 Estimate submitted for approval. Server message:", result);
+
+          this.dispatchEvent(new ShowToastEvent({
+            title: 'Submitted',
+            message: result,
+            variant: 'success'
+          }));
+
+          this.dispatchEvent(new CustomEvent('estimatechanged', {
+            bubbles: true,
+            composed: true
+          }));
+        });
+    })
+    .catch(error => {
+      console.error("❌ Error occurred during estimate submission:", error);
+
+      this.dispatchEvent(new ShowToastEvent({
+        title: 'Error',
+        message: error.body ? error.body.message : error.message,
+        variant: 'error'
+      }));
+    })
+    .finally(() => {
+      console.log("🔚 Closing modal...");
+      this.handleCloseModal();
+    });
+}
 
 
 
@@ -1113,18 +1165,20 @@ handleDiscountValueChange(event) {
 // ✅ Extracted logic for reusability
 recalculateDiscount() {
   if (this.selectedDiscountType === 'Flat') {
-      this.totalDiscount = this.discountValue;
+    this.totalDiscount = parseFloat((this.discountValue || 0).toFixed(2));
   } else if (this.selectedDiscountType === 'Percentage') {
-      this.totalDiscount = (this.netTotal * this.discountValue) / 100;
+    this.totalDiscount = parseFloat(
+      ((this.netTotal * (this.discountValue || 0)) / 100).toFixed(2)
+    );
   } else {
-      this.totalDiscount = 0;
+    this.totalDiscount = 0;
   }
 
-  this.grandTotal = this.netTotal - this.totalDiscount;
-
-  // console.log('total discount test1 :', this.totalDiscount);
-  // console.log('grand total test2 :', this.grandTotal);
+  this.grandTotal = parseFloat(
+    (this.netTotal - this.totalDiscount).toFixed(2)
+  );
 }
+
 
 handleInternalnumber(event) {
   this.internalEstimateNumber = event.target.value;

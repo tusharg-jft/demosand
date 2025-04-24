@@ -103,7 +103,7 @@ public static String createInvoiceFromEstimate(Id estimateId) {
         Invoice__c invoice = new Invoice__c();
         invoice.Estimate__c = estimateId;
         invoice.Work_Orders__c = estimate.Work_Orders__c;
-        invoice.Status__c = 'On Hold';
+        invoice.Status__c = 'Pending';
         invoice.Email__c = estimate.Email__c;
         invoice.Estimate_Data__c = estimate.Estimate_Data__c;
         invoice.Tax_Amount__c = estimate.Tax_Amount__c;
@@ -244,7 +244,7 @@ System.debug('Site Id: ' + workOrder.Sites__c);
         String title = 'Invoice Approval';
         List<Id> userIdList = new List<Id>(userIds);
 
-        NotificationUtility.sendNotification('InvoiceApproval', userIdList, invoice.Id, body, title);
+      //  NotificationUtility.sendNotification('InvoiceApproval', userIdList, invoice.Id, body, title);
 
         return invoice.Id;
 

@@ -396,7 +396,6 @@ public static Object getIncurredData(Id workOrderId) {
          FROM Invoice__c
          WHERE Work_Orders__c = :workOrderId
          ORDER BY CreatedDate DESC
-         LIMIT 1
      ];
  }
 
@@ -424,11 +423,14 @@ public static List<Vendor_Trade_Rate_Management__c> getVTRMRecords(Id tradeId, I
 @AuraEnabled(cacheable=true)
 public static List<Estimate__c> getEstimates(Id workOrderId) {
     return [
-        SELECT Id, parentestimate__c,  Name ,Estimate_Data__c, Incurred_Data__c,netPrice__c, totalDiscount__c, grandTotal__c, Status__c,Formdata__c
+        SELECT Id, parentestimate__c, Name, Estimate_Data__c, Incurred_Data__c,
+               netPrice__c, totalDiscount__c, grandTotal__c, Status__c, Formdata__c
         FROM Estimate__c
         WHERE Work_Orders__c = :workOrderId
+          AND Display__c = 'yes'
         ORDER BY CreatedDate DESC
     ];
+    
 }
 
 @AuraEnabled(cacheable=true)

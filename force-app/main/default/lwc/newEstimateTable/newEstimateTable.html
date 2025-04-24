@@ -87,13 +87,15 @@
                                                 type="edit">
                                             </c-add-edit-button-version-one>
                                         </template>
-                                        <!-- <template if:true={estimate.isSubmitedForApproval}>
+                                        <template if:true={estimate.showViewEstimate}>
                                             <lightning-button
                                                 variant="neutral"
                                                 label="View Estimate"
-                                                data-id={estimate.Id}>
+                                                data-id={estimate.Id}
+                                                onclick={openModal} 
+                                                >
                                             </lightning-button>
-                                        </template> -->
+                                        </template>
                                     </div>
                                 </td>
                             </tr>

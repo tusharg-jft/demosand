@@ -94,6 +94,8 @@ grandTotal
 totalDicount;
 
 
+
+
 @wire(getEstimates, { workOrderId: '$recordId' })
 // setEstimateList(result) {
 //     try {
@@ -164,6 +166,8 @@ setEstimateList(result) {
                     
                     isSubmitedForApproval: estimate.Status__c === 'Submited_For_Approval' || 'Submited for Approval',
                     estimateStatus: estimate.Status__c === 'Submited_For_Approval' ? 'Submited For Approval' : estimate.Status__c,
+
+                    showViewEstimate: estimate.Status__c === 'Invoiced' || estimate.Status__c === 'Submited_For_Approval'
 
 
                      };

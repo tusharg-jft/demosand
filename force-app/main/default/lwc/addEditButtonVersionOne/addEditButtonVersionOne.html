@@ -248,13 +248,7 @@ onclick={handleCloseModal} title="Close">
               </div>
   
 
-              <!-- TAX HAS TO BE ADDED -->
-              <!-- <div class="slds-col slds-size_1-of-4 slds-p-around_small">
-                <div class="summary-box">
-                  <p class="slds-text-title">Tax Amount</p>
-                  <p class="slds-text-heading_large">₹{taxAmount}</p>
-                </div>
-              </div> -->
+
   
               <div class="slds-col slds-size_1-of-4 slds-p-around_small">
                 <div class="summary-box">
@@ -269,6 +263,7 @@ onclick={handleCloseModal} title="Close">
           <!-- Buttons -->
   <!-- Buttons aligned to the right -->
   <div class="slds-m-top_medium slds-grid slds-grid_align-end">
+    <template if:false={showRejectedButton}>
 
     <lightning-button 
     label="Submit for approval" 
@@ -277,15 +272,26 @@ onclick={handleCloseModal} title="Close">
     class="slds-m-right_small" 
     variant="brand">
   </lightning-button>
-  <!-- <template if:true={showDraftButton}> -->
-  <lightning-button 
-    label="Save as Draft" 
-    onclick={handleSaveClick} 
-    data-action="draft" 
-    class="slds-m-right_small" 
-    variant="brand">
-  </lightning-button>
-<!-- </template> -->
+  
+    <lightning-button 
+      label="Save as Draft" 
+      onclick={handleSaveClick} 
+      data-action="draft" 
+      class="slds-m-right_small" 
+      variant="brand">
+    </lightning-button>
+  </template>
+    
+  <template if:true={showRejectedButton}>
+    <lightning-button 
+      label="Send for review" 
+      onclick={handleSendForReview} 
+      data-action="draft" 
+      class="slds-m-right_small" 
+      variant="brand">
+    </lightning-button>
+  </template>
+  
 
 
     <lightning-button label="Cancel" onclick={handleCloseModal} variant="destructive"></lightning-button>

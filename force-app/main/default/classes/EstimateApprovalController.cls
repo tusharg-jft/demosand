@@ -24,6 +24,13 @@ public with sharing class EstimateApprovalController {
             if (estimate.Status__c == 'Approved' || estimate.Status__c == 'Rejected') {
                 return 'Estimate already finalized.';
             }
+            if (estimate.Status__c == 'Rejected') {
+
+            
+                
+            
+            
+            }
 
             // Step 2: Fetch related Work Order
             if (estimate.Work_Orders__c == null) {

@@ -141,7 +141,7 @@ export default class EstimateModalButton extends LightningElement {
         console.error('Error fetching data:', error);
       });
 
-    getExpenses({ workOrderId: this.rec }).then(data => {
+    getExpenses({ invoiceId: this.passedestimateid }).then(data => {
       // console.log("Raw Expenses Data: ", data);
       if (data && data.length > 0) {
         this.mergeExpensesIntoMaterial(data);
