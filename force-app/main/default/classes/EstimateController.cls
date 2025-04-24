@@ -396,6 +396,7 @@ public static Object getIncurredData(Id workOrderId) {
          FROM Invoice__c
          WHERE Work_Orders__c = :workOrderId
          ORDER BY CreatedDate DESC
+         LIMIT 1
      ];
  }
 
@@ -423,7 +424,7 @@ public static List<Vendor_Trade_Rate_Management__c> getVTRMRecords(Id tradeId, I
 @AuraEnabled(cacheable=true)
 public static List<Estimate__c> getEstimates(Id workOrderId) {
     return [
-        SELECT Id, Name ,Estimate_Data__c, Incurred_Data__c,netPrice__c, totalDiscount__c, grandTotal__c, Status__c,Formdata__c
+        SELECT Id, parentestimate__c,  Name ,Estimate_Data__c, Incurred_Data__c,netPrice__c, totalDiscount__c, grandTotal__c, Status__c,Formdata__c
         FROM Estimate__c
         WHERE Work_Orders__c = :workOrderId
         ORDER BY CreatedDate DESC
@@ -631,7 +632,46 @@ public static Id updateCurrentEstimate(String formData,  Decimal netPrice, Decim
     }
 }
 
-
+@AuraEnabled(cacheable=true)
+public static List<Estimate__c> getPreviousVersions(Id estimateId) {
+    try {
+        // First get the current estimate to find its parent estimate ID
+        Estimate__c currentEstimate = [
+            SELECT Id, parentestimate__c, Name, CreatedDate
+            FROM Estimate__c
+            WHERE Id = :estimateId
+            LIMIT 1
+        ];
+        
+        List<Estimate__c> previousVersions = new List<Estimate__c>();
+        
+        // If this estimate has a parent, fetch it
+        if (currentEstimate.parentestimate__c != null) {
+            // Get the direct parent estimate
+            Estimate__c parentEstimate = [
+                SELECT Id, Name, CreatedDate
+                FROM Estimate__c
+                WHERE Id = :currentEstimate.parentestimate__c
+                LIMIT 1
+            ];
+            previousVersions.add(parentEstimate);
+            
+            // Get all other estimates that share the same parent
+            List<Estimate__c> siblingEstimates = [
+                SELECT Id, Name, CreatedDate
+                FROM Estimate__c
+                WHERE parentestimate__c = :currentEstimate.parentestimate__c
+                AND Id != :estimateId
+                ORDER BY CreatedDate DESC
+            ];
+            previousVersions.addAll(siblingEstimates);
+        }
+        
+        return previousVersions;
+    } catch (Exception e) {
+        throw new AuraHandledException('Error fetching previous versions: ' + e.getMessage());
+    }
+}
 
 
 

@@ -48,7 +48,7 @@ public with sharing class CalendarController {
     public static List<Trip__c> getTrips(String searchText, String brandId, String siteId, String vendorId, String tradeId) {
         String LikeValue = '%' + searchText + '%';
 
-        String query = 'SELECT Id, Name, Work_Order__c, Work_Order__r.WorkOrderNumber, Date_Time_ETA__c, Status__c, Brand__c, Brand__r.Name, Sites__c, Sites__r.Name, Vendor__c, Vendor__r.Name, Trade__c, Trade__r.Name ' +
+        String query = 'SELECT Id, Name, Work_Orders__c, Work_Orders__r.WorkOrderNumber__c, Date_Time_ETA__c, Status__c, Brand__c, Brand__r.Name, Sites__c, Sites__r.Name, Vendor__c, Vendor__r.Name, Trade__c, Trade__r.Name ' +
                        'FROM Trip__c ' +
                        'WHERE (Name LIKE :LikeValue OR Status__c LIKE :LikeValue)';
 

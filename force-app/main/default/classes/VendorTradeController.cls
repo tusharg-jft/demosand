@@ -24,38 +24,42 @@ public with sharing class VendorTradeController {
         return currencyFields;
     }
 
-@AuraEnabled
-public static void saveVendorTradeRate(String vendorId, String tradeId, Map<String, Decimal> currencyValues) {
-    // Ensure that the vendor and trade records exist
-    List<Vendor__c> vendors = [SELECT Id FROM Vendor__c WHERE Id = :vendorId LIMIT 1];
-    if (vendors.isEmpty()) {
-        throw new AuraHandledException('Vendor not found.');
+    @AuraEnabled
+    public static void saveVendorTradeRate(String vendorId, String tradeId, String corporateId, Map<String, Decimal> currencyValues) {
+        // Ensure that the vendor and trade records exist
+        List<Vendor__c> vendors = [SELECT Id FROM Vendor__c WHERE Id = :vendorId LIMIT 1];
+        if (vendors.isEmpty()) {
+            throw new AuraHandledException('Vendor not found.');
+        }
+        
+        List<Trade__c> trades = [SELECT Id FROM Trade__c WHERE Id = :tradeId LIMIT 1];
+        if (trades.isEmpty()) {
+            throw new AuraHandledException('Trade not found.');
+        }
+    
+        Vendor_Trade_Rate_Management__c rate = new Vendor_Trade_Rate_Management__c();
+        rate.Vendor__c = vendorId;
+        rate.Trade__c = tradeId;
+        
+        if (String.isNotBlank(corporateId)) {
+            rate.Corporate__c = corporateId;
+        }
+    
+        try {
+            // Map the currency values to the rate object
+            for (String fieldName : currencyValues.keySet()) {
+                if (currencyValues.get(fieldName) != null) {
+                    rate.put(fieldName, currencyValues.get(fieldName));
+                }
+            }
+            insert rate;
+        } catch (DmlException e) {
+            System.debug('Error saving Vendor Trade Rate: ' + e.getMessage());
+            System.debug('Error Stack Trace: ' + e.getStackTraceString());
+            throw new AuraHandledException('Error saving Vendor Trade Rate: ' + e.getMessage());
+        }
     }
     
-    List<Trade__c> trades = [SELECT Id FROM Trade__c WHERE Id = :tradeId LIMIT 1];
-    if (trades.isEmpty()) {
-        throw new AuraHandledException('Trade not found.');
-    }
-
-    Vendor_Trade_Rate_Management__c rate = new Vendor_Trade_Rate_Management__c();
-    rate.Vendor__c = vendorId;
-    rate.Trade__c = tradeId;
-
-    try {
-        // Map the currency values to the rate object
-        for (String fieldName : currencyValues.keySet()) {
-            if (currencyValues.get(fieldName) != null) {
-                rate.put(fieldName, currencyValues.get(fieldName));
-            }
-        }
-        insert rate;
-    } catch (DmlException e) {
-        System.debug('Error saving Vendor Trade Rate: ' + e.getMessage());
-        System.debug('Error Stack Trace: ' + e.getStackTraceString());
-        throw new AuraHandledException('Error saving Vendor Trade Rate: ' + e.getMessage());
-    }
-}
-
     
     @AuraEnabled(cacheable=true)
     public static List<Trade__c> getVendorTrades(Id vendorId) {
@@ -169,26 +173,26 @@ public static Map<String, Decimal> getExistingTradeRate(String vendorId, String 
             return true;
         }
 
-        Id tradeId;
-        try {
-            tradeId = [
-                SELECT Trade__c FROM Vendor_Trade_Rate_Management__c WHERE Id = :recordId LIMIT 1
-            ].Trade__c;
-        } catch (Exception e) {
-            System.debug('>>> Error fetching Trade ID: ' + e.getMessage());
-            return false;
-        }
+        // Id tradeId;
+        // try {
+        //     tradeId = [
+        //         SELECT Trade__c FROM Vendor_Trade_Rate_Management__c WHERE Id = :recordId LIMIT 1
+        //     ].Trade__c;
+        // } catch (Exception e) {
+        //     System.debug('>>> Error fetching Trade ID: ' + e.getMessage());
+        //     return false;
+        // }
 
-        System.debug('>>> Trade ID: ' + tradeId);
-        if (tradeId == null) {
-            System.debug('>>> No Trade found for this VTRM.');
-            return false;
-        }
+        // System.debug('>>> Trade ID: ' + tradeId);
+        // if (tradeId == null) {
+        //     System.debug('>>> No Trade found for this VTRM.');
+        //     return false;
+        // }
 
         Id corporateId;
         try {
             corporateId = [
-                SELECT Corporate__c FROM Trade__c WHERE Id = :tradeId LIMIT 1
+                SELECT Corporate__c FROM Vendor_Trade_Rate_Management__c WHERE Id = :recordId LIMIT 1
             ].Corporate__c;
         } catch (Exception e) {
             System.debug('>>> Error fetching Corporate ID: ' + e.getMessage());
@@ -224,23 +228,48 @@ public static Map<String, Decimal> getExistingTradeRate(String vendorId, String 
         return isAuthorized;
     }
 
+
+    @AuraEnabled(cacheable=true)
+    public static List<Corporate__c> getAllCorporates() {
+        return [SELECT Id, Name FROM Corporate__c];
+    }
+
     @AuraEnabled
     public static void processApproval(Id vtrmId, Boolean isApproved) {
-        Vendor_Trade_Rate_Management__c vtrm = [
-            SELECT Id, Status__c 
+        List<Vendor_Trade_Rate_Management__c> vtrmList = [
+            SELECT Id, Status__c, Vendor__c, Name
             FROM Vendor_Trade_Rate_Management__c 
             WHERE Id = :vtrmId 
             LIMIT 1
         ];
-
-        if (vtrm == null) {
-            throw new AuraHandledException('VTRM record not found.');
+        
+        if (vtrmList.isEmpty()) {
+            throw new AuraHandledException('VTRM record not found or inaccessible.');
         }
-
-        // Update Approval Status
+    
+        Vendor_Trade_Rate_Management__c vtrm = vtrmList[0];
         vtrm.Status__c = isApproved ? 'Approved' : 'Declined';
         update vtrm;
+    
+        // Safe vendor fetch
+        List<Vendor__c> vendorList = [SELECT User__c FROM Vendor__c WHERE Id = :vtrm.Vendor__c LIMIT 1];
+        if (vendorList.isEmpty()) {
+            throw new AuraHandledException('Vendor record not found or inaccessible.');
+        }
+    
+        Id vendorUserId = vendorList[0].User__c;
+    
+        String  body= 'Trade Rate ' + vtrm.Name + ' has been ' + vtrm.Status__c + ' by ' + UserInfo.getName();
+        String title = 'Trade Rate ' + vtrm.Status__c;
+    
+        NotificationUtility.sendNotification(
+            'InvoiceApproval',
+            new List<Id>{ vendorUserId },
+            vtrmId,
+            body,
+            title
+        );
     }
-
+    
     
 }

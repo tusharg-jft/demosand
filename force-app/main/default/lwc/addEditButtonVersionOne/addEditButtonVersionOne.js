@@ -3,6 +3,7 @@ import { api, LightningElement, track } from 'lwc';
 import {  currentFormData } from './estimateData'; // Ensure both are exported correctly
 import getTradeAndVendorId from '@salesforce/apex/EstimateController.getTradeAndVendorId';
 import getVTRMRecords from '@salesforce/apex/EstimateController.getVTRMRecords';
+import getPreviousVersions from '@salesforce/apex/EstimateController.getPreviousVersions';
 import createEstimateRecord from '@salesforce/apex/EstimateController.createEstimateRecord';
 // import updateEstimateprices from '@salesforce/apex/EstimateController.updateEstimateprices'
 import createInvoiceFromEstimate from '@salesforce/apex/InvoiceApprovalController.createInvoiceFromEstimate';
@@ -78,7 +79,7 @@ export default class EstimateModalButton extends LightningElement {
 @track statusestimateStatus='';
 
 @track estimateStatusvalue;
-
+@track previousVersions = []; // To store previous versions of the estimate
 
 discountOptions = [
   { label: 'Flat Rate', value: 'Flat' },
@@ -168,6 +169,23 @@ discountOptions = [
         })
         .catch(error => {
             console.error("Error fetching Estimate Data:", error);
+        });
+        
+    // Fetch previous versions of the estimate
+    getPreviousVersions({ estimateId: this.passedestimateid })
+        .then(versions => {
+            // Format the date for each version
+            this.previousVersions = (versions || []).map(version => {
+                return {
+                    ...version,
+                    CreatedDate: this.formatDate(version.CreatedDate)
+                };
+            });
+            console.log('Previous versions loaded:', this.previousVersions.length);
+        })
+        .catch(error => {
+            console.error('Error fetching previous versions:', error);
+            this.previousVersions = [];
         });
 
     getLatestPrices({ passedestimateid: this.passedestimateid })
@@ -351,9 +369,6 @@ handleInputChangeDynamic(event) {
 
 
 calculateNetPriceDynamic(sectionType, sectionIndex, rowIndex) {
-
-  console.log("calculateNetPriceDynamic")
-
 
   const section = this.formData[sectionType][sectionIndex];
   const fieldRow = section.Fields[rowIndex];
@@ -1017,6 +1032,8 @@ handleSaveClick(event) {
       }
     })
     .then(responseid => {
+      console.log("response id is coming************", responseid)
+
       if (!responseid) return; // skip if update wasn't needed
 
       if (actionType === 'submit') {
@@ -1035,8 +1052,6 @@ handleSaveClick(event) {
             }));
           });
       } else {
-        console.log("Creating new estimate=====")
-
         this.dispatchEvent(new ShowToastEvent({
           title: 'Success',
           message: `Estimate created successfully!`,
@@ -1044,9 +1059,6 @@ handleSaveClick(event) {
         }));
 
 
-        console.log("Calling new event=====")
-
-        
         // Dispatch refresh event after successful save as draft
         this.dispatchEvent(new CustomEvent('estimatechanged', {
           bubbles: true,
@@ -1073,11 +1085,9 @@ handleSaveClick(event) {
 
             
 handleDiscountChange(event) {
-  // console.log("handleDiscountChange=================================================")
   this.selectedDiscountType = event.detail.value;
   this.showDiscountValue = true;
 
-  // Update the placeholder based on selection
   if (this.selectedDiscountType === 'Flat') {
       this.discountPlaceholder = 'Enter flat amount';
   } else if (this.selectedDiscountType === 'Percentage') {
@@ -1094,7 +1104,6 @@ handleDiscountChange(event) {
 }
 
 handleDiscountValueChange(event) {
-  // console.log("handleDiscountValueChange====================================")
   this.discountValue = parseFloat(event.detail.value); // Ensure it's a float
 
   // ✅ Recalculate whenever discount value changes
@@ -1144,6 +1153,36 @@ handleSubmitClick(){
 
 }
 
+// Handle click on previous version link
+handleVersionClick(event) {
+  // Prevent default navigation
+  event.preventDefault();
+  
+  // Get the estimate ID from the data attribute
+  const estimateId = event.currentTarget.dataset.id;
+  
+  // Open the estimate record in a new tab/window
+  window.open('/' + estimateId, '_blank');
+}
+
+// Helper method to format date
+formatDate(dateString) {
+  if (!dateString) return '';
+  
+  const date = new Date(dateString);
+  
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    return dateString;
+  }
+  
+  // Format date as DD/MM/YYYY
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  
+  return `${day}/${month}/${year}`;
+}
 
 
 }

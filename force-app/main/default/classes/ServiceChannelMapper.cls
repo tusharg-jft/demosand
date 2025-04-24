@@ -38,12 +38,17 @@ public static Work_Order__c mapWorkOrderToSF(Map<String, Object> woData, Work_Or
     // targetWorkOrder.Corporate__c = corporateId; // Uncommented - critical for linking to Corporate__c
     // targetWorkOrder.Sites__c = siteId; // Already correct
     
+    Id devRecordTypeId = Schema.SObjectType.Work_Order__c.getRecordTypeInfosByName().get('External_WorkOrders').getRecordTypeId();
+
+
     // Basic fields from payload
     targetWorkOrder.External_WO_ID__c = String.valueOf(woData.get('Id')); // e.g., "309152940"
    // targetWorkOrder.Work_Order_Number__c = (String) woData.get('Number'); // e.g., "WEB-3274522" (assuming this field exists)
     targetWorkOrder.Description__c = (String) woData.get('Description'); // e.g., "Test JMA 11:34"
     targetWorkOrder.External_WO_Provider__c = 'Service Channel'; // Static value
     targetWorkOrder.Sites__c = siteId;
+    targetWorkOrder.RecordTypeId = devRecordTypeId;
+    
 
     // Handle NTE
     Object nteValue = woData.get('Nte');

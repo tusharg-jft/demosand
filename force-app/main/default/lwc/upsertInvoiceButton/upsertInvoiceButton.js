@@ -328,7 +328,58 @@ export default class EstimateModalButton extends LightningElement {
     } else {
       console.warn("⚠️ Section or Row not found.");
     }
-  } 
+  } // handleInputChangeDynamic(event) {
+  //   console.log("🟦 handleInputChangeDynamic fired");
+
+  //   const sectionType = event.target.dataset.type; // 'Estimate' or 'Incurred'
+  //   const sectionLabel = event.target.dataset.label;
+  //   const fieldName = event.target.dataset.field;
+  //   const index = parseInt(event.target.dataset.index, 10);
+
+  //   const sectionList = this.formData[sectionType];
+  //   const sectionIndex = sectionList.findIndex(sec => sec.Label === sectionLabel);
+
+
+  //   if (sectionIndex >= 0 && sectionList[sectionIndex].Fields[index]) {
+  //     const fieldValue = event.target.value;
+  //     const fieldIndex = sectionList[sectionIndex].Fields[index].findIndex(
+  //       field => field.fieldLabel === fieldName
+  //     );
+
+  //     if (fieldIndex >= 0) {
+  //       sectionList[sectionIndex].Fields[index][fieldIndex].value = fieldValue;
+
+  //       this.calculateNetPriceDynamic(sectionType, sectionIndex, index);
+  //       this.calculateGrandTotal();
+  //       // this.handleDiscountValueChange()
+  //     } else {
+  //       console.warn("⚠️ Field not found within row.");
+  //     }
+  //   } else {
+  //     console.warn("⚠️ Section or Row not found.");
+  //   }
+  // }
+
+  //Done
+  // calculateNetPriceDynamic(sectionType, sectionIndex, rowIndex) {
+  //   const section = this.formData[sectionType][sectionIndex];
+  //   const fieldRow = section.Fields[rowIndex];
+
+  //   if (fieldRow) {
+  //     const trackableFields = fieldRow.filter(field => field.track);
+  //     const netPriceField = fieldRow.find(field => field.autoUpdate);
+
+  //     if (netPriceField && trackableFields.length === 2) {
+  //       const [field1, field2] = trackableFields;
+  //       const value1 = parseFloat(field1.value) || 0;
+  //       const value2 = parseFloat(field2.value) || 0;
+  //       const netPrice = value1 * value2;
+
+  //       netPriceField.value = netPrice.toFixed(2);
+  //       console.log(netPrice)
+  //     }
+  //   }
+  // }
   calculateNetPriceDynamic(sectionType, sectionIndex, rowIndex) {
 
     console.log("calculateNetPriceDynamic")

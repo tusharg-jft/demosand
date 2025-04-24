@@ -36,14 +36,11 @@ export default class TestContactList extends LightningElement {
     }
     
     connectedCallback() {
-        console.log("connectedCallback======")
         // Add event listener for the estimatechanged event
         this.template.addEventListener('estimatechanged', this.handleEstimateChanged.bind(this));
     }
     
     disconnectedCallback() {
-        console.log("disconnectedCallback======")
-
         // Remove event listener when component is destroyed
         this.template.removeEventListener('estimatechanged', this.handleEstimateChanged.bind(this));
     }
@@ -165,7 +162,7 @@ setEstimateList(result) {
                     isRejected: estimate.Status__c === 'Rejected',
                     isDraft: estimate.Status__c === 'Draft',
                     
-                    isSubmitedForApproval: estimate.Status__c === 'Submited_For_Approval',
+                    isSubmitedForApproval: estimate.Status__c === 'Submited_For_Approval' || 'Submited for Approval',
                     estimateStatus: estimate.Status__c === 'Submited_For_Approval' ? 'Submited For Approval' : estimate.Status__c,
 
 
@@ -204,6 +201,22 @@ setEstimateList(result) {
     }
 }
 
+
+@track isModalOpen = false;
+@track vfPageUrl;
+
+// Make sure to set your base VF URL here
+VF_BASE_URL = '/apex/EstimatePDFPage?id=';
+
+openModal(event) {
+    const estimateId = event.target.dataset.id;
+    this.vfPageUrl = this.VF_BASE_URL + this.estimateId;
+    this.isModalOpen = true;
+}
+
+closeModal() {
+    this.isModalOpen = false;
+}
 
 
         get Estimateid(){
@@ -309,8 +322,6 @@ showButton(){
                   variant: 'success'
               }));
 
-              console.log("=====Calling submit for approval=====")
-
               this.handleEstimateChanged()
 
           })
@@ -324,14 +335,7 @@ showButton(){
           })
           .finally(() => {
               this.isSubmitting = false;
-              console.log('After Apex Call');
-              console.log('hi' +this.estimateid) // Debug
           });
-
-
-
-console.log("hello");
-
         }
 
         // Handle row selection in the custom table

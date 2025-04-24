@@ -66,36 +66,73 @@ wiredInvoices({ data, error }) {
     }
 }
 
-  handleSubmitInvoiceApproval(event){
-            console.log(this.invoiceId);
-  
-  
-  
-  
-            submitInvoiceForApproval({ invoiceId: this.invoiceId })
-            .then(result => {
-                console.log('Apex Response:', result);
-                this.dispatchEvent(new ShowToastEvent({
-                    title: 'Submitted',
-                    message: result,
-                    variant: 'success'
-                }));
-            })
-            .catch(error => {
-                console.error('Error submitting for approval', error);
-                this.dispatchEvent(new ShowToastEvent({
-                    title: 'Error',
-                    message: error.body?.message || 'Unexpected error',
-                    variant: 'error'
-                }));
-            })
-            .finally(() => {
-                this.isSubmitting = false;
-                console.log('After Apex Call');
-                console.log('hi' +this.invoiceId) // Debug
-            });
-          }
 
+isInvoiceModalOpen = false;
+ invoicePdfUrl;
+
+handleOpenInvoiceModal(event) {
+    const invoiceId = event.currentTarget.dataset.id;
+    this.invoicePdfUrl = `/apex/NewInvoicePDFPage?id=`+ this.invoiceId;
+    this.isInvoiceModalOpen = true;
+}
+
+handleCloseModal() {
+    this.isInvoiceModalOpen = false;
+    this.invoicePdfUrl = null;
+}
+
+
+  // handleSubmitInvoiceApproval(event){
+  //           console.log(this.invoiceId);
+  
+  
+  
+  
+  //           submitInvoiceForApproval({ invoiceId: this.invoiceId })
+  //           .then(result => {
+  //               console.log('Apex Response:', result);
+  //               this.dispatchEvent(new ShowToastEvent({
+  //                   title: 'Submitted',
+  //                   message: result,
+  //                   variant: 'success'
+  //               }));
+  //           })
+  //           .catch(error => {
+  //               console.error('Error submitting for approval', error);
+  //               this.dispatchEvent(new ShowToastEvent({
+  //                   title: 'Error',
+  //                   message: error.body?.message || 'Unexpected error',
+  //                   variant: 'error'
+  //               }));
+  //           })
+  //           .finally(() => {
+  //               this.isSubmitting = false;
+  //               console.log('After Apex Call');
+  //               console.log('hi' +this.invoiceId) // Debug
+  //           });
+  //         }
+  handleSubmitInvoiceApproval(event) {
+    const invoiceId = event.currentTarget.dataset.id;
+    console.log('Submitting Invoice:', invoiceId);
+  
+    submitInvoiceForApproval({ invoiceId })
+      .then(result => {
+        this.dispatchEvent(new ShowToastEvent({
+          title: 'Submitted',
+          message: result,
+          variant: 'success'
+        }));
+      })
+      .catch(error => {
+        console.error('Error submitting for approval', error);
+        this.dispatchEvent(new ShowToastEvent({
+          title: 'Error',
+          message: error.body?.message || 'Unexpected error',
+          variant: 'error'
+        }));
+      });
+  }
+  
 
           get show(){
             if(this.statu=='Pending' || 

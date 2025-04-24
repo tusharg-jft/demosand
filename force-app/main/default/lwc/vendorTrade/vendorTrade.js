@@ -4,18 +4,37 @@ import getCurrencyFields from '@salesforce/apex/VendorTradeController.getCurrenc
 import saveVendorTradeRate from '@salesforce/apex/VendorTradeController.saveVendorTradeRate';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getTradesByVendor from '@salesforce/apex/VendorTradeController.getTradesByVendor';
-
+import getAllCorporates from '@salesforce/apex/VendorTradeController.getAllCorporates';
 
 export default class VendorTrade extends LightningElement {
     @api recordId;                     // Vendor ID from the record page
     @track trades = [];                 // List of trades with isChecked property
-    @track selectedTradeId = null;      // Selected trade ID
+    @track selectedTradeId = null;   
+    @track selectedCorpId = null;
+    @track selectedCorpName = '';   // Selected trade ID
     @track selectedTradeName = '';      // Selected trade name
     @track currencyFields = [];         // List of currency fields
     @track fieldValues = {};            // Field values (API names and their values)
     showModal = false;                  // Modal visibility flag
 
     // Fetch trades and add a boolean 'isChecked' property
+
+    @track corporateOptions = [];
+
+    @wire(getAllCorporates)
+    wiredCorporates({ data, error }) {
+        if (data) {
+            this.corporateOptions = data.map(corp => ({
+                label: corp.Name,
+                value: corp.Id
+            }));
+        } else if (error) {
+            console.error('Error fetching corporates:', error);
+        }
+    }
+
+
+
 
 @wire(getTradesByVendor, { vendorId: '$recordId' })
 wiredTrades({ error, data }) {
@@ -54,6 +73,8 @@ wiredTrades({ error, data }) {
         });
         this.selectedTradeId = null;
         this.selectedTradeName = '';
+        this.selectedCorpId=null;
+        this.selectedCorpName='';
     }
 
     // Show modal and fetch currency fields
@@ -89,6 +110,11 @@ wiredTrades({ error, data }) {
         });
     }
 
+
+    handleCorporateChange(event) {
+        this.selectedCorpId = event.detail.value;
+    }
+
     // Handle currency field value changes
     handleCurrencyChange(event) {
         const fieldName = event.target.dataset.field;
@@ -117,7 +143,9 @@ wiredTrades({ error, data }) {
         saveVendorTradeRate({
             vendorId: this.recordId,
             tradeId: this.selectedTradeId,
+            corporateId: this.selectedCorpId,
             currencyValues: this.fieldValues
+            
         })
         .then(() => {
             this.showToast('Success', 'Trade rate saved successfully.', 'success');

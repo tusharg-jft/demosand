@@ -1,68 +1,30 @@
 .container {
-    max-width: 800px;
-    margin: 0 auto; /* Center the card */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
+    border-radius: 0.5rem;
 }
 
-.trade-item {
-    display: flex;
-    align-items: center;
-    padding: 12px;
-    border-bottom: 1px solid #dcdcdc;
-    transition: background 0.3s;
+.trade-item lightning-input {
+    background: #f9f9f9;
+    padding: 0.5rem;
+    border-radius: 0.4rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-.trade-item:hover {
+.custom-modal .slds-modal__container {
+    max-width: 60rem;
+    border-radius: 0.5rem;
+}
+
+.custom-modal .slds-modal__content {
+    background: #fefefe;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+}
+
+.slds-form-element__addon {
     background: #f3f3f3;
-}
-
-/* Button group styling */
-.button-group {
-    display: flex;
-    justify-content: center;  /* Center the buttons */
-    gap: 12px;
-    margin-top: 20px;
-}
-
-/* Modal styling */
-.slds-modal__container {
-    max-width: 600px;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-}
-
-.slds-modal__header {
-    background: #f3f3f3;
-    padding: 20px;
-    border-bottom: 1px solid #dcdcdc;
-    font-weight: bold;
-    text-align: center;
-}
-
-.slds-modal__content {
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.slds-modal__footer {
-    display: flex;
-    justify-content: center; /* Center footer buttons */
-    gap: 12px;
-    padding: 16px;
-    background: #f3f3f3;
-    border-top: 1px solid #dcdcdc;
-}
-
-/* Button spacing and styling */
-lightning-button {
-    min-width: 120px;
-}
-
-/* Smooth transitions */
-.slds-modal, .slds-backdrop {
-    transition: opacity 0.3s ease-in-out;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid #ccc;
+    border-right: none;
+    border-radius: 0.25rem 0 0 0.25rem;
+    color: #333;
 }

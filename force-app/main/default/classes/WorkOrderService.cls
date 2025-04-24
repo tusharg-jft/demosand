@@ -2,7 +2,7 @@
  * @description       : 
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             : 
- * @last modified on  : 03-21-2025
+ * @last modified on  : 04-24-2025
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
 public with sharing class WorkOrderService {
@@ -228,6 +228,7 @@ public static Id createWorkOrder(Map<String, Object> workOrderData) {
         
         if (workOrderData.containsKey('NTE__c')) {
             workOrder.NTE__c = (Decimal)workOrderData.get('NTE__c');
+            workOrder.Original_NTE__c = (Decimal)workOrderData.get('NTE__c');
         }
         
         if (workOrderData.containsKey('Description__c')) {

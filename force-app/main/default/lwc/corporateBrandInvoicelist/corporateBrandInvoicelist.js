@@ -11,13 +11,16 @@ export default class CorporateBrandInvoicelist extends LightningElement {
 
     vendorOptions = [{ label: 'All', value: 'All' }];
     statusOptions = [{ label: 'All', value: 'All' }];
-
     columns = [
         {
+            type: 'button',
             label: 'Invoice Name',
-            fieldName: 'invoiceUrl',
-            type: 'url',
-            typeAttributes: { label: { fieldName: 'name' }, target: '_blank' }
+            fieldName: 'name',
+            typeAttributes: {
+                label: { fieldName: 'name' },
+                name: 'view_invoice',
+                variant: 'base'
+            }
         },
         {
             label: 'Work Order',
@@ -35,6 +38,7 @@ export default class CorporateBrandInvoicelist extends LightningElement {
         { label: 'Total Discount', fieldName: 'totalDiscount', type: 'currency' },
         { label: 'Grand Total', fieldName: 'grandTotal', type: 'currency' }
     ];
+    
 
     @wire(getInvoicesBasedOnWorkOrder, { workOrderId: '$recordId' })
     wiredInvoices({ error, data }) {
@@ -44,8 +48,8 @@ export default class CorporateBrandInvoicelist extends LightningElement {
 
             this.invoices = data.map(inv => ({
                 ...inv,
-                invoiceUrl: `/lightning/r/Invoice__c/${inv.invoiceId}/view`,
-                workOrderUrl: `/lightning/r/Work_Order__c/${inv.workOrderId}/view`
+               invoiceUrl: `/apex/NewInvoicePDFPage?id=${inv.invoiceId}`,
+    workOrderUrl: `/lightning/r/Work_Order__c/${inv.workOrderId}/view`
             }));
 
             this.filteredInvoices = this.invoices;
@@ -54,6 +58,25 @@ export default class CorporateBrandInvoicelist extends LightningElement {
             console.error('❌ Error fetching invoices:', error);
         }
     }
+
+
+    @track showModal = false;
+@track selectedInvoiceUrl = '';
+
+handleRowAction(event) {
+    const actionName = event.detail.action.name;
+    const row = event.detail.row;
+
+    if (actionName === 'view_invoice') {
+        this.selectedInvoiceUrl = `/apex/NewInvoicePDFPage?id=${row.invoiceId}`;
+        this.showModal = true;
+    }
+}
+
+closeModal() {
+    this.showModal = false;
+}
+
 
     buildFilterOptions(data) {
         const vendorSet = new Set();

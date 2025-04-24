@@ -262,7 +262,7 @@ export default class WorkRequestForm extends NavigationMixin(LightningElement) {
                 this.dispatchEvent(
                     new ShowToastEvent({
                         title: 'Success',
-                        message: 'Work Order Reqeust created successfully',
+                        message: 'Work Order Request created successfully',
                         variant: 'success'
                     })
                 );
@@ -274,6 +274,9 @@ export default class WorkRequestForm extends NavigationMixin(LightningElement) {
                         recordId: result,
                         objectApiName: 'Work_Order_Request__c',
                         actionName: 'view'
+                    },
+                    state: {
+                        tabId: 'related' // Targets the Related tab
                     }
                 });
             })

@@ -20,6 +20,24 @@ onclick={handleCloseModal} title="Close">
 </button>
 
   <h2 class="slds-text-heading_medium slds-text-align_left custom-capitalize-first">{type} Estimate</h2>
+  
+  <!-- Previous Versions Section - Only show in edit mode and if there are previous versions -->
+  <template if:true={isEdit}>
+    <template if:true={previousVersions.length}>
+      <div class="slds-m-top_small slds-p-top_small" style="border-top: 1px solid #dddbda;">
+        <h3 class="slds-text-heading_small slds-m-bottom_x-small">Previous Versions</h3>
+        <div class="slds-grid slds-wrap">
+          <template for:each={previousVersions} for:item="version">
+            <div key={version.Id} class="slds-col slds-size_1-of-3 slds-p-around_xx-small">
+              <a href={version.Id} onclick={handleVersionClick} data-id={version.Id} target="_blank" class="slds-text-link">
+                {version.Name}
+              </a>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+  </template>
 </header>
 
 <!-- Content Section -->

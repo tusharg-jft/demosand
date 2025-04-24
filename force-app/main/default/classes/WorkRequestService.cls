@@ -78,17 +78,19 @@ public with sharing class WorkRequestService {
             insert workRequest;
             System.debug('Work Order Request inserted with ID: ' + workRequest.Id);
 
+            Work_Order_Request__c wor =[Select Name From Work_Order_Request__c where Id =:workRequest.Id];
+            
             // Prepare message
             String notificationTitle = 'Work Request Created Successfully';
-            String notificationMessage = siteName + ' (Created by ' + currentUserName + ') has created a work request '+ workRequest.Name+' and is asking for approval.';
+            String notificationMessage = siteName + ' has submitted a Work request '+ wor.Name+' and is asking for approval.';
 
             // Send notification
             NotificationUtility.sendNotification(
                 'Work_Request_Created',
                 userIds,
                 workRequest.Id,
-                notificationTitle,
-                notificationMessage
+                notificationMessage,
+                 notificationTitle
             );
 
             return workRequest.Id;

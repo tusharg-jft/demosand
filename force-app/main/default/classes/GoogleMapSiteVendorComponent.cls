@@ -152,8 +152,20 @@ public with sharing class GoogleMapSiteVendorComponent {
     }
 
     // Query vendors filtered by the trade on the work order
+    Set<Id> vendorIds = new Set<Id>();
+    List<TradeVendor__c> tradeVendorList = [
+      SELECT Vendor__c
+      FROM TradeVendor__c
+      WHERE Trade__c = :workOrder.Trade__c
+    ];
+
+    for (TradeVendor__c tv : tradeVendorList) {
+      if (tv.Vendor__c != null) {
+        vendorIds.add(tv.Vendor__c);
+      }
+    }
     List<Vendor__c> vendors = new List<Vendor__c>();
-    if (workOrder.Trade__c != null) {
+    if (!vendorIds.isEmpty()) {
       vendors = [
         SELECT
           Id,
@@ -167,7 +179,7 @@ public with sharing class GoogleMapSiteVendorComponent {
           Address__PostalCode__s,
           Address__CountryCode__s
         FROM Vendor__c
-        WHERE Trade__c = :workOrder.Trade__c
+        WHERE Id IN :vendorIds
       ];
     }
 

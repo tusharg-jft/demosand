@@ -1,10 +1,17 @@
+/**
+ * @description       : 
+ * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+ * @group             : 
+ * @last modified on  : 04-08-2025
+ * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+**/
 public with sharing class WORelatedHomePage {
     @AuraEnabled(cacheable=true)
     public static Map<String, Integer> getDashboardData() {
         Map<String, Integer> dashboardData = new Map<String, Integer>();
         
         try {
-            Integer pendingWorkRequestsCount = [SELECT COUNT() FROM Work_Order__c WHERE Status__c = 'Pending'];
+            Integer pendingWorkRequestsCount = [SELECT COUNT() FROM Work_Order__c WHERE Status__c = 'In Progress'];
             dashboardData.put('PENDING REQUEST', pendingWorkRequestsCount);
 
             Integer activeWorkOrdersCount = [SELECT COUNT() FROM Work_Order__c WHERE Status__c = 'Active'];

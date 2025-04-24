@@ -15,9 +15,8 @@ export default class childWrokorderTriplist extends NavigationMixin(LightningEle
     columns = [
         {
             label: 'Trip Name',
-
             fieldName: 'tripUrl',
-            type: 'button',
+            type: 'url',
             typeAttributes: {
                 label: { fieldName: 'Name' },
                 target: '_self'

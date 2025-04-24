@@ -1,165 +1,104 @@
 <template>
-  
-  <!-- Flexbox container to align buttons to the right -->
-  <div style="display: flex; justify-content: flex-end; gap: 0.5rem; ">
-  <!-- <template if:true={showEdit}>
+
+  <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin: 1rem;">
     <c-upsert-invoice-button 
-      type="edit" 
+      type="add" 
       rec={recordId}>
     </c-upsert-invoice-button>
+  </div>
+  
 
-  </template>
+<div style="border: 1px solid #D8D8D8; border-radius: 5px;">
+  <article class="slds-card">
+    <!-- Header -->
+    <div class="slds-card__header slds-grid">
+      <header class="slds-media slds-media_center slds-has-flexi-truncate">
+        <div class="slds-media__body">
+          <h2 class="slds-card__header-title">
+            <div class="slds-m-left_small slds-m-top_medium slds-truncate" title="Invoices">
+              <lightning-icon icon-name="standard:expense_report" size="small"></lightning-icon>
+              <span class="slds-m-left_small" style="font-weight: bold;">Related Invoices</span>
+            </div>
+          </h2>
+        </div>
+      </header>
+    </div>
 
-  <template  if:true={show}>
-    <lightning-button 
-label='Submit For Approval'
-data-id={invoiceid}
-onclick={handleSubmitInvoiceApproval}>
-</lightning-button>
-</template> -->
-
-    <c-upsert-invoice-button 
-    type="add" 
-    rec={recordId}>
-  </c-upsert-invoice-button>
-
-
-
-<!-- <template if:true={shoVF}>
-  <lightning-button 
-   label="View Invoice PDF" onclick={openModal}></lightning-button>
-
-
-  <template if:true={isModalOpen}>
-      <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open" >
-          <div class="slds-modal__container slds-modal_large" style="width: 70%; max-width: 70%;">
-
+    <!-- Custom Table -->
+    <div class="slds-scrollable">
+      <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
+        <thead>
+          <tr class="slds-line-height_reset">
+            <th scope="col"><div class="slds-truncate">Invoice Name</div></th>
+            <th scope="col"><div class="slds-truncate">Status</div></th>
+            <th scope="col"><div class="slds-truncate slds-text-align_center">Net Total</div></th>
+            <th scope="col"><div class="slds-truncate slds-text-align_center">Total Discount</div></th>
+            <th scope="col"><div class="slds-truncate slds-text-align_center">Grand Total</div></th>
+            <th scope="col"><div class="slds-truncate">Actions</div></th>
+          </tr>
+        </thead>
+        <tbody>
+          <template for:each={invoices.data} for:item="invoice" for:index="index">
+            <tr key={invoice.Id} class="slds-hint-parent slds-p-vertical_x-small" data-id={invoice.Id} onclick={handleRowSelection}>
               
-              <header class="slds-modal__header">
-                  <h2 class="slds-text-heading_medium">Invoice PDF</h2>
-                 
-              </header>
+              <td class="slds-p-around_medium">
+                <a href="javascript:void(0);" onclick={handleOpenInvoiceModal} data-id={invoice.Id}>
+                  <div class="slds-truncate slds-text-link_bare slds-text-title_bold">{invoice.Name}</div>
+                </a>
+              </td>
+              <td class="slds-p-around_medium">
+                <div class="slds-truncate">{invoice.Status__c}</div>
+              </td>
+              <td class="slds-p-around_medium slds-text-align_center">
+                <div class="slds-truncate">₹{invoice.netTotal__c}</div>
+              </td>
+              <td class="slds-p-around_medium slds-text-align_center">
+                <div class="slds-truncate">₹{invoice.totalDiscount__c}</div>
+              </td>
+              <td class="slds-p-around_medium slds-text-align_center">
+                <div class="slds-truncate">₹{invoice.grandTotal__c}</div>
+              </td>
+              <td class="slds-p-around_medium">
+                <div class="slds-button-group slds-grid slds-wrap" role="group">
+                  <c-upsert-invoice-button
+                    class="slds-m-right_small"
+                    rec={recordId}
+                    passedestimateid={invoice.Id}
+                    type="edit">
+                  </c-upsert-invoice-button>
 
-              <div class="slds-modal__content" style="height: 80vh">
-                  <iframe src={vfPageUrl} width="100%" height="600px" style="border: none;"></iframe>
-              </div>
-
-             
-              <footer class="slds-modal__footer">
-                  <lightning-button variant="neutral" label="Close" onclick={closeModal}></lightning-button>
-              </footer>
-          </div>
-      </section>
-
-     
-      <div class="slds-backdrop slds-backdrop_open"></div>
-  </template>
-</template> -->
-
-
-
-
-  </div>
-
-
-
-
-
-  <!-- Related Invoices Section -->
-  <div style="border: 1px solid #D8D8D8; border-radius: 5px;">
-    <article class="slds-card">
-      <!-- Header -->
-      <div class="slds-card__header slds-grid">
-        <header class="slds-media slds-media_center slds-has-flexi-truncate">
-          <div class="slds-media__body">
-            <h2 class="slds-card__header-title">
-              <div class="slds-card__header slds-truncate" title="Related Invoices">
-                <div class="slds-m-left_small slds-m-top_medium">
-                  <lightning-icon icon-name="standard:expense_report" size="small"></lightning-icon>
-                  <span class="slds-m-left_small" style="font-weight: bold">Related Invoices</span>
-                </div>
-              </div>
-            </h2>
-          </div>
-        </header>
-      </div>
-
-      <!-- Custom Table -->
-      <div class="slds-scrollable">
-        <template if:true={invoices.data}>
-          <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
-            <thead>
-              <tr class="slds-line-height_reset">
-                <th class="slds-text-title_caps" scope="col">
-                  <div class="slds-truncate">#</div>
-                </th>
-                <th class="slds-text-title_caps" scope="col">
-                  <div class="slds-truncate">Invoice Name1</div>
-                </th>
-                <th class="slds-text-title_caps" scope="col">
-                  <div class="slds-truncate">Status</div>
-                </th>
-                <th class="slds-text-title_caps" scope="col">
-                  <div class="slds-truncate">Net Total</div>
-                </th>
-                <th class="slds-text-title_caps" scope="col">
-                  <div class="slds-truncate">Total Discount</div>
-                </th>
-                <th class="slds-text-title_caps" scope="col">
-                  <div class="slds-truncate">Grand Total</div>
-                </th>
-                <th class="slds-text-title_caps" scope="col">
-                  <div class="slds-truncate">Actions</div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <template for:each={invoices.data} for:item="invoice" for:index="index">
-                <tr key={invoice.Id} class="slds-hint-parent slds-p-vertical_x-small" data-id={invoice.Id} onclick={handleRowSelection}>
-                  <td><div class="slds-truncate">{invoice.rowNumber}</div></td>
-                  <td><div class="slds-truncate"><a href={invoice.recordLink} target="_blank">{invoice.Name}</a></div></td>
-                  <td><div class="slds-truncate">{invoice.Status__c}</div></td>
-                  <td><div class="slds-truncate">₹{invoice.netTotal__c}</div></td>
-                  <td><div class="slds-truncate">₹{invoice.totalDiscount__c}</div></td>
-                  <td><div class="slds-truncate">₹{invoice.grandTotal__c}</div></td>
-                
-                  <!-- 🔘 Actions column -->
-                  <td>
-                    <div class="slds-button-group" role="group">
-                
-                        <c-upsert-invoice-button 
-                          type="edit" 
-                          rec={recordId}
-                          passedestimateid={invoice.Id} 
-                          >
-                        </c-upsert-invoice-button>
-                    
-                        <lightning-button 
-                    label='Submit For Approval'
-                    data-id={invoiceid}
-                    onclick={handleSubmitInvoiceApproval}>
+                  <template if:true={invoice.isPending}>
+                    <lightning-button
+                      label="Submit For Approval"
+                      data-id={invoice.Id}
+                      onclick={handleSubmitInvoiceApproval}>
                     </lightning-button>
-                    
-                        <lightning-button
-                          variant="neutral"
-                          label="View PDF"
-                          data-id={invoice.Id}
-                          onclick={handleOpenInvoiceModal}
-                          class="slds-m-left_x-small"
-                        ></lightning-button>
-                    </div>
-                  </td>
-                </tr>
-                
-              </template>
-            </tbody>
-          </table>
-        </template>
-        
-        <template if:true={invoices.error}>
-          <p class="slds-text-color_error slds-p-around_medium">{invoices.error}</p>
-        </template>
+                  </template>
+                </div>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</div>
+
+<!-- MODAL for PDF -->
+<template if:true={isInvoiceModalOpen}>
+  <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_large">
+    <div class="slds-modal__container" style="width:65%; max-width:65%">
+      <header class="slds-modal__header">
+        <button class="slds-button slds-modal__close" onclick={handleCloseModal}>
+          <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+        </button>
+        <h2 class="slds-text-heading_medium">Invoice PDF</h2>
+      </header>
+      <div class="slds-modal__content slds-p-around_medium" style="height: 80vh;">
+        <iframe src={invoicePdfUrl} width="100%" height="100%" frameborder="0"></iframe>
       </div>
-    </article>
-  </div>
+    </div>
+  </section>
+  <div class="slds-backdrop slds-backdrop_open"></div>
+</template>
 </template>

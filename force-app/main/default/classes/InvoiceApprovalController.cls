@@ -4,7 +4,7 @@ public with sharing class InvoiceApprovalController {
         try {
             
 
-            Invoice__c invoice = [SELECT Id,Work_Orders__c,Status__c FROM Invoice__c WHERE Id =:invoiceId];
+            Invoice__c invoice = [SELECT Id,Name,Work_Orders__c,Status__c FROM Invoice__c WHERE Id =:invoiceId];
             
             Work_Order__c woList = [
                 SELECT Id, Brand__c, Corporate__c ,Sites__c,Vendor__c
@@ -103,9 +103,9 @@ public static String createInvoiceFromEstimate(Id estimateId) {
         Invoice__c invoice = new Invoice__c();
         invoice.Estimate__c = estimateId;
         invoice.Work_Orders__c = estimate.Work_Orders__c;
-        invoice.Status__c = 'Pending';
+        invoice.Status__c = 'On Hold';
         invoice.Email__c = estimate.Email__c;
-        invoice.Estimate_Date__c = estimate.Estimate_Date__c;
+        invoice.Estimate_Data__c = estimate.Estimate_Data__c;
         invoice.Tax_Amount__c = estimate.Tax_Amount__c;
         invoice.Value__c = estimate.Value__c;
         invoice.Description__c = estimate.Description__c;
@@ -119,7 +119,13 @@ public static String createInvoiceFromEstimate(Id estimateId) {
 
         insert invoice;
 
- 
+ Invoice__c inv =[Select Name From Invoice__c where Id = :invoice.Id];
+        
+        estimate.Status__c='Invoiced';
+        update estimate;
+        
+        System.debug('Estimate Data : '+ estimate.Estimate_Data__c);
+        
         List<Work_Order__c> woList = [
             SELECT Id, ParentWO__c, Invoices__c
             FROM Work_Order__c
@@ -234,7 +240,7 @@ System.debug('Site Id: ' + workOrder.Sites__c);
         }
 
         // Step 8: Send notification
-        String body = 'Invoice ' + invoice.Name + ' has been Submitted for Approval by ' + v.Name;
+        String body = 'Invoice ' + inv.Name + ' has been Submitted for Approval by ' + v.Name;
         String title = 'Invoice Approval';
         List<Id> userIdList = new List<Id>(userIds);
 

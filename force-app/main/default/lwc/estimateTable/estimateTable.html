@@ -1,119 +1,50 @@
 <template>
-  <div style="border: 1px solid #D8D8D8; border-radius: 5px;">
-      <article class="slds-card">
-          <!-- Header -->
-          <div class="slds-card__header slds-grid">
-              <header class="slds-media slds-media_center slds-has-flexi-truncate">
-                  <div class="slds-media__body">
-                      <h2 class="slds-card__header-title">
-                          <div class="slds-card__header slds-truncate" title="Contact">
-                              <div class="slds-m-left_small slds-m-top_medium">
-                                  <lightning-icon icon-name="standard:contact" size="small"></lightning-icon>
-                                  <span class="slds-m-left_small" style="font-weight: bold">Related Estimate</span>
-                              </div>
-                          </div>
-                      </h2>
-                  </div>
-
-                  <!-- Add button -->
-                  <div>
-                      <template if:true={showedit}>
-                      <c-add-edit-button-version-one class="slds-m-around_medium" rec={recordId} type="edit"></c-add-edit-button-version-one>
-                                  </template>
-
-
-                     
-                      
-
-          <template  if:true={show}>
-                      <lightning-button 
-                label='Submit For Approval'
-                data-id={Estimateid}
-                onclick={handleSubmitApproval}>
-              </lightning-button>
+  <c-add-edit-button-version-one class="slds-m-around_medium" rec={recordId} type="add"></c-add-edit-button-version-one>
+  <lightning-card title="Related Estimates" icon-name="standard:quote">
+    <template if:true={estimates.data}>
+      <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+        <thead>
+          <tr>
+            <th>Estimate Name</th>
+            
+            <th>Status</th>
+            <th>Estimate Data</th>
+            <th>Estimate Actions</th> 
+            <th>Invoice Actions</th><!-- New column -->
+          </tr>
+        </thead>
+        <tbody>
+          <template if:true={firstEstimate}>
+            <tr>
+              <td>
+                <a href={firstEstimate.recordLink} target="_blank">{firstEstimate.Name}</a>
+              </td>
+            
+              <td>{firstEstimate.Status__c}</td>
+              <td>
+                <a href="javascript:void(0);" data-record-id={firstEstimate.Id} onclick={handleEstimateDataClick}>
+                  {firstEstimate.estimateDataLabel}
+                </a>
+              </td>
+              <td>
+                <lightning-button
+                  variant="brand"
+                  label={firstEstimate.submitLabel}
+                  data-id={firstEstimate.Id}
+                  onclick={handleSubmitApproval}>
+                </lightning-button>
+              </td>
+              <td>
+                <c-add-edit-button-version-one class="slds-m-around_medium" rec={recordId} type="edit"></c-add-edit-button-version-one>
+   
+              </td>
+            </tr>
           </template>
+        </tbody>
+      </table>
+    </template>
 
-          <template if:true={Newshow}>
-              <lightning-button
-              class="slds-m-around_medium"
+  
+  </lightning-card>
 
-              label='Create Invoice'
-              data-id={Estimateid}
-              onclick={handleSubmitInvoiceApproval}>
-            </lightning-button>
-          </template>
-
-            <!-- <template if:true={shoVF}>
-              <lightning-button 
-label="Generate Estimate PDF" 
-onclick={showPdf} 
->
-</lightning-button>
-
-<template if:true={showIframe}>
-<div class="pdf-container">
-<iframe src={vfPageUrl} width="100%" height="600px" style="border: none;"></iframe>
-
-</div>
-</template>
-          </template> -->
-      
-
-
-          <template if:true={shoVF}>
-              <lightning-button class="slds-m-around_medium"
-               label="View Estimate PDF" onclick={openModal}></lightning-button>
-
-          
-              <template if:true={isModalOpen}>
-                  <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
-                      <div class="slds-modal__container" style="width: 70%; max-width: 70%;">
-          
-                          
-                          <header class="slds-modal__header">
-                              <h2 class="slds-text-heading_medium">Estimate PDF</h2>
-                              <!-- <button class="slds-button slds-modal__close" title="Close" onclick={closeModal}>
-                                  
-                              </button> -->
-                          </header>
-          
-                          <div class="slds-modal__content" style="height: 80vh">
-                              <iframe src={vfPageUrl} width="100%" height="600px" style="border: none;"></iframe>
-                          </div>
-          
-                         
-                          <footer class="slds-modal__footer">
-                              <lightning-button variant="neutral" label="Close" onclick={closeModal}></lightning-button>
-                          </footer>
-                      </div>
-                  </section>
-          
-                 
-                  <div class="slds-backdrop slds-backdrop_open"></div>
-              </template>
-          </template>
-
-
-
-          <c-add-edit-button-version-one class="slds-m-around_medium" rec={recordId} type="add"></c-add-edit-button-version-one>
-
-                  </div>
-              </header>
-          </div>
-
-          <!-- Table -->
-          <div class="slds-scrollable">
-              <lightning-datatable
-                  key-field="Id"
-                  data={estimateList}
-                  columns={columns}
-                  show-row-number-column
-                  hide-checkbox-column>
-              </lightning-datatable>
-          </div>
-      </article>
-
-      <!-- Conditionally show Edit button -->
-      
-  </div>
 </template>

@@ -58,6 +58,20 @@ public without sharing class ServiceChannelService {
 * @description Handles the 'WorkOrderCreated' event. Creates Corporate__c, Sites__c, and Work_Order__c records if they don't exist.
 * @param woData The 'Object' part of the webhook payload.
 */
+    /**
+* @description Handles the 'WorkOrderCreated' event. Creates Corporate__c, Brand__c, Sites__c, and Work_Order__c records if they don't exist.
+* @param woData The 'Object' part of the webhook payload.
+*/
+    /**
+* @description Handles the 'WorkOrderCreated' event. Creates Corporate__c and Brand__c synchronously,
+* then delegates Site__c and Work_Order__c creation to a Future Method.
+* @param woData The 'Object' part of the webhook payload.
+*/
+    /**
+* @description Handles the 'WorkOrderCreated' event. Creates Corporate__c, Brand__c, Sites__c, and Work_Order__c records.
+* Runs within the Future context of processWebhook, allowing callouts after initial DML.
+* @param woData The 'Object' part of the webhook payload.
+*/
     public static void handleWorkOrderCreated(Map<String, Object> woData) {
         String scWorkOrderId = String.valueOf(woData.get('Id'));
         System.debug('Handling WorkOrderCreated for SC WO ID: ' + scWorkOrderId);
@@ -69,22 +83,30 @@ public without sharing class ServiceChannelService {
             return;
         }
         
-        // Extract Subscriber and Location info
+        // Extract Subscriber, Location, and Provider info from payload
         Map<String, Object> subscriberInfo = (Map<String, Object>) woData.get('Subscriber');
         Map<String, Object> locationInfo = (Map<String, Object>) woData.get('Location');
         Map<String, Object> providerInfo = (Map<String, Object>) woData.get('Provider');
         
-        String scProviderId = String.valueOf(providerInfo.get('Id')); // "2000090505"
-        if (subscriberInfo == null || locationInfo == null) {
-            System.debug(LoggingLevel.ERROR, 'Missing Subscriber or Location info for SC WO ID: ' + scWorkOrderId);
+        if (subscriberInfo == null || locationInfo == null || providerInfo == null) {
+            System.debug(LoggingLevel.ERROR, 'Missing Subscriber, Location, or Provider info for SC WO ID: ' + scWorkOrderId);
             return;
         }
         
-        String scSubscriberId = String.valueOf(subscriberInfo.get('Id')); // "2014917243"
-        String scLocationId = String.valueOf(locationInfo.get('Id')); // "2006085096"
-        String scStoreId = String.valueOf(locationInfo.get('StoreId')); // "102"
+        String scSubscriberId = String.valueOf(subscriberInfo.get('Id')); // e.g., "2014917243"
+        String scLocationId = String.valueOf(locationInfo.get('Id'));     // e.g., "2006085096"
+        String scStoreId = String.valueOf(locationInfo.get('StoreId'));   // e.g., "102"
+        String scProviderId = String.valueOf(providerInfo.get('Id'));     // e.g., "2000090505"
         
-        // Create/Get Corporate__c
+         // Since we're in a Future context, we can perform the callout here after initial DML
+        Map<String, Object> detailedLocationInfo = fetchLocationDetails(scLocationId);
+        if (detailedLocationInfo == null) {
+            System.debug(LoggingLevel.ERROR, 'Failed to fetch detailed location info for SC Location ID: ' + scLocationId);
+            return;
+        }
+        System.debug('Fetched location details: ' + JSON.serialize(detailedLocationInfo));       
+        
+        // Create/Get Corporate__c using payload data
         Corporate__c corporate = getOrCreateCorporate(scSubscriberId, subscriberInfo);
         if (corporate == null) {
             System.debug(LoggingLevel.ERROR, 'Failed to get or create Corporate__c for SC WO ID: ' + scWorkOrderId);
@@ -92,24 +114,23 @@ public without sharing class ServiceChannelService {
         }
         System.debug('Corporate__c processed. ID: ' + corporate.Id);
         
-        
-        // 2. Create/Get Brand__c with Corporate__c reference
-        Brand__c brand = getOrCreateBrand(scProviderId, providerInfo, corporate.Id);
+        // Create/Get Brand__c using payload data with Corporate__c reference
+        Brand__c brand = getOrCreateBrand(scSubscriberId, subscriberInfo, corporate.Id);
         if (brand == null) {
             System.debug(LoggingLevel.ERROR, 'Failed to get or create Brand__c for SC WO ID: ' + scWorkOrderId);
             return;
         }
         System.debug('Brand__c processed. ID: ' + brand.Id);
-        // Create/Get Sites__c
-        System.debug('Calling getOrCreateSite for Store ID: ' + scStoreId + ' with Corporate ID: ' + corporate.Id);
-        Sites__c site = getOrCreateSite(scStoreId, scLocationId, locationInfo, corporate.Id, brand.Id);
+        
+        // Create/Get Sites__c using API response
+        Sites__c site = getOrCreateSite(scStoreId, scLocationId, detailedLocationInfo, corporate.Id, brand.Id);
         if (site == null) {
             System.debug(LoggingLevel.ERROR, 'Failed to get or create Sites__c for SC WO ID: ' + scWorkOrderId);
             return;
         }
         System.debug('Sites__c processed. ID: ' + site.Id);
         
-        // Create Work_Order__c
+        // Create Work_Order__c using original payload
         Work_Order__c newWorkOrder = ServiceChannelMapper.mapWorkOrderToSF(woData, null, corporate.Id, site.Id);
         Database.SaveResult sr = Database.insert(newWorkOrder, false);
         if (sr.isSuccess()) {
@@ -118,7 +139,46 @@ public without sharing class ServiceChannelService {
             System.debug(LoggingLevel.ERROR, 'Failed to insert Work_Order__c for SC WO ID: ' + scWorkOrderId + '. Errors: ' + sr.getErrors());
         }
     }
-    
+    /**
+* @description Future Method to fetch location details and create Sites__c (from API response) and Work_Order__c (from payload).
+* @param scLocationId The Service Channel Location ID.
+* @param scStoreId The Service Channel Store ID.
+* @param corporateId The Salesforce ID of the Corporate__c record.
+* @param brandId The Salesforce ID of the Brand__c record.
+* @param woDataJson The serialized webhook payload data.
+*/
+    @future(callout=true)
+    public static void createSiteAndWorkOrderFuture(String scLocationId, String scStoreId, Id corporateId, Id brandId, String woDataJson) {
+        // Deserialize woData for Work Order creation
+        Map<String, Object> woData = (Map<String, Object>) JSON.deserializeUntyped(woDataJson);
+        String scWorkOrderId = String.valueOf(woData.get('Id'));
+        System.debug('Future Method started for SC WO ID: ' + scWorkOrderId);
+        
+        // Fetch detailed location info from API for Site creation
+        Map<String, Object> detailedLocationInfo = fetchLocationDetails(scLocationId);
+        if (detailedLocationInfo == null) {
+            System.debug(LoggingLevel.ERROR, 'Failed to fetch detailed location info for SC Location ID: ' + scLocationId);
+            return;
+        }
+        System.debug('Fetched location details: ' + JSON.serialize(detailedLocationInfo));
+        
+        // Create/Get Sites__c using API response (detailedLocationInfo)
+        Sites__c site = getOrCreateSite(scStoreId, scLocationId, detailedLocationInfo, corporateId, brandId);
+        if (site == null) {
+            System.debug(LoggingLevel.ERROR, 'Failed to get or create Sites__c for SC WO ID: ' + scWorkOrderId);
+            return;
+        }
+        System.debug('Sites__c processed in Future Method. ID: ' + site.Id);
+        
+        // Create Work_Order__c using original payload (woData)
+        Work_Order__c newWorkOrder = ServiceChannelMapper.mapWorkOrderToSF(woData, null, corporateId, site.Id);
+        Database.SaveResult sr = Database.insert(newWorkOrder, false);
+        if (sr.isSuccess()) {
+            System.debug('Successfully created Work_Order__c ID: ' + sr.getId() + ' for SC WO ID: ' + scWorkOrderId);
+        } else {
+            System.debug(LoggingLevel.ERROR, 'Failed to insert Work_Order__c for SC WO ID: ' + scWorkOrderId + '. Errors: ' + sr.getErrors());
+        }
+    }
     /**
 * @description Handles the 'WorkOrderNoteAdded' event. Creates a CaseComment related to the Work_Order__c.
 * @param noteData The 'Object' part of the webhook payload containing note details.
@@ -398,18 +458,22 @@ return; // Avoid sending duplicates
     private static String tokenCache;
     private static DateTime tokenExpiry;
     
-    // Custom Setting Name (Adjust if different)
-    private static final String CREDENTIAL_SETTING_NAME = 'Default'; // Assuming a single record named 'Default'
-    public static Map<String, Object> fetchSubscriberDetails(String scSubscriberId) {
-        System.debug('Entering fetchSubscriberDetails method');
+    /**
+* @description Fetches detailed location information from Service Channel API using the location ID.
+* @param scLocationId The Service Channel Location ID (e.g., "2006085096").
+* @return Map<String, Object> The location details from the API response, or null if the call fails.
+*/
+    public static Map<String, Object> fetchLocationDetails(String scLocationId) {
+        System.debug('Entering fetchLocationDetails method with SC Location ID: ' + scLocationId);
         
         String authToken = getServiceChannelAuthToken();
+        system.debug('bypassed the auth token');
         if (authToken == null) {
             System.debug(LoggingLevel.ERROR, 'Failed to retrieve authentication token');
             return null;
         }
         
-        String url = SERVICE_CHANNEL_BASE_URL + '/workorders?id=' + scSubscriberId;
+        String url = SERVICE_CHANNEL_BASE_URL + '/locations?id=' + scLocationId;
         HttpRequest req = new HttpRequest();
         req.setEndpoint(url);
         req.setMethod('GET');
@@ -421,35 +485,33 @@ return; // Avoid sending duplicates
         
         try {
             res = http.send(req);
-            System.debug('Request sent for corporate subscriber. Response: ' + res.getBody());
+            System.debug('Request sent for location details. Response: ' + res.getBody());
             
             if (res.getStatusCode() == 200) {
-                // Deserialize response properly
                 Object responseObj = JSON.deserializeUntyped(res.getBody());
                 
                 if (responseObj instanceof List<Object>) {
                     List<Object> responseList = (List<Object>) responseObj;
                     if (!responseList.isEmpty() && responseList[0] instanceof Map<String, Object>) {
-                        return (Map<String, Object>) responseList[0]; // Return first item
+                        return (Map<String, Object>) responseList[0]; // Return the first location
                     }
                 } else if (responseObj instanceof Map<String, Object>) {
-                    return (Map<String, Object>) responseObj; // If response is a Map, return it directly
+                    return (Map<String, Object>) responseObj; // Direct map response
                 }
                 
                 System.debug(LoggingLevel.ERROR, 'Unexpected response format: ' + res.getBody());
                 return null;
             } else {
-                System.debug(LoggingLevel.ERROR, 'Failed to fetch subscriber details. Status Code: ' 
+                System.debug(LoggingLevel.ERROR, 'Failed to fetch location details. Status Code: ' 
                              + res.getStatusCode() + '. Body: ' + res.getBody());
                 return null;
             }
         } catch (Exception e) {
-            System.debug(LoggingLevel.ERROR, 'Exception in fetchSubscriberDetails: ' + e.getMessage() 
+            System.debug(LoggingLevel.ERROR, 'Exception in fetchLocationDetails: ' + e.getMessage() 
                          + ' Stack: ' + e.getStackTraceString());
             return null;
         }
     }
-    
     
     // Get authentication token for ServiceChannel API
     private static String getServiceChannelAuthToken() {
@@ -492,8 +554,10 @@ return; // Avoid sending duplicates
             if (res.getStatusCode() == 200) {
                 Map<String, Object> responseMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
                 system.debug('response map'+responseMap);
+                system.debug('access_token');
                 if (responseMap.containsKey('access_token') && responseMap.containsKey('expires_in')) {
                     tokenCache = (String) responseMap.get('access_token');
+                    system.debug('access token'+tokenCache);
                     // Ensure expires_in is treated as Decimal or Double before converting to Integer if necessary
                     Object expiresInObj = responseMap.get('expires_in');
                     Integer expiresInSeconds = 0;
@@ -541,9 +605,27 @@ return; // Avoid sending duplicates
 * @param corporateId The ID of the parent Corporate__c record.
 * @return Sites__c The found or newly created Sites__c record, or null on failure.
 */
-    private static Sites__c getOrCreateSite(String scStoreId, String scLocationId, Map<String, Object> locationInfo, Id corporateId, Id brandId) {
-        if (String.isBlank(scStoreId) || corporateId == null) {
-            System.debug(LoggingLevel.ERROR, 'Invalid parameters for getOrCreateSite. scStoreId: ' + scStoreId + ', corporateId: ' + corporateId);
+    /**
+* @description Gets or creates a Sites__c record based on SC Store ID and Corporate ID, using detailed location data from the API.
+* @param scStoreId The Service Channel Store ID (e.g., "00241").
+* @param scLocationId The Service Channel Location ID (e.g., "2006085096").
+* @param detailedLocationInfo Map containing detailed location data from the SC API response.
+* @param corporateId The ID of the parent Corporate__c record.
+* @param brandId The ID of the parent Brand__c record.
+* @return Sites__c The found or newly created Sites__c record, or null on failure.
+*/
+    /**
+* @description Gets or creates a Sites__c record based on SC Store ID and Corporate ID, using detailed location data from the API.
+* @param scStoreId The Service Channel Store ID (e.g., "00241").
+* @param scLocationId The Service Channel Location ID (e.g., "2006085096").
+* @param detailedLocationInfo Map containing detailed location data from the SC API response.
+* @param corporateId The ID of the parent Corporate__c record.
+* @param brandId The ID of the parent Brand__c record.
+* @return Sites__c The found or newly created Sites__c record, or null on failure.
+*/
+    private static Sites__c getOrCreateSite(String scStoreId, String scLocationId, Map<String, Object> detailedLocationInfo, Id corporateId, Id brandId) {
+        if (String.isBlank(scStoreId) || corporateId == null || detailedLocationInfo == null) {
+            System.debug(LoggingLevel.ERROR, 'Invalid parameters for getOrCreateSite. scStoreId: ' + scStoreId + ', corporateId: ' + corporateId + ', detailedLocationInfo: ' + detailedLocationInfo);
             return null;
         }
         
@@ -554,15 +636,22 @@ return; // Avoid sending duplicates
             return existingSites[0];
         }
         
+        // Create new Sites__c using detailed location info from API
+        Sites__c newSite = new Sites__c();
+        newSite.Name = (String) detailedLocationInfo.get('Name'); // e.g., "1350 Braselton Parkway"
+        newSite.Corporate__c = corporateId;
+        newSite.Brand__c = brandId;
+        newSite.External_Site_Name__c = (String) detailedLocationInfo.get('Name');
+        newSite.External_Site_ID__c = scStoreId; // e.g., "00241"
         
-        // Create new Sites__c
-        Sites__c newSite = new Sites__c(
-            Name = (String) locationInfo.get('Name'), // "South Beverly Grill" (for Name field)
-            Corporate__c = corporateId,
-            Brand__c = brandId,
-            External_Site_Name__c = (String) locationInfo.get('Name'), // "South Beverly Grill"
-            External_Site_ID__c = scStoreId // "102"
-        );
+        // Map additional fields from the API response (adjust field names to match your Sites__c object)
+        //   newSite.Address__c = String.valueOf(detailedLocationInfo.get('Address1')) + ' ' + String.valueOf(detailedLocationInfo.get('Address2')); // e.g., "Ste 100 1350 Braselton Parkway"
+        newSite.Address__City__s = (String) detailedLocationInfo.get('City');     // e.g., "Braselton"
+        // newSite.State__c = (String) detailedLocationInfo.get('State');   // e.g., "GA"
+        //newSite.Zip__c = (String) detailedLocationInfo.get('Zip');       // e.g., "30517-5324"
+        // newSite.Country__c = (String) detailedLocationInfo.get('Country'); // e.g., "US"
+        newSite.Address__Latitude__s = (Decimal) detailedLocationInfo.get('Latitude');   // e.g., 34.11312464
+        newSite.Address__Longitude__s = (Decimal) detailedLocationInfo.get('Longitude'); // e.g., -83.78256645
         
         Database.SaveResult sr = Database.insert(newSite, false);
         if (sr.isSuccess()) {
@@ -586,7 +675,7 @@ return; // Avoid sending duplicates
                                          AND Corporate__c = :corporateId 
                                          LIMIT 1];
         if (!existingBrands.isEmpty()) {
-          //  System.debug('Found existing Brand__c ID: ' + existingBrands[0].Id + ' for SC Provider ID: ' + scSubscriberId + ' and Corporate ID: ' + corporateId);
+            //  System.debug('Found existing Brand__c ID: ' + existingBrands[0].Id + ' for SC Provider ID: ' + scSubscriberId + ' and Corporate ID: ' + corporateId);
             return existingBrands[0];
         }
         
@@ -603,11 +692,11 @@ return; // Avoid sending duplicates
         Database.SaveResult sr = Database.insert(newBrand, false);
         system.debug('Created Brand Record'+newBrand.Id);
         if (sr.isSuccess()) {
-       //     System.debug('Created Brand__c ID: ' + sr.getId() + ' for SC Provider ID: ' + scProviderId + ' and Corporate ID: ' + corporateId);
+            //     System.debug('Created Brand__c ID: ' + sr.getId() + ' for SC Provider ID: ' + scProviderId + ' and Corporate ID: ' + corporateId);
             newBrand.Id = sr.getId();
             return newBrand;
         } else {
-      //      System.debug(LoggingLevel.ERROR, 'Failed to insert Brand__c for SC Provider ID: ' + scProviderId + '. Errors: ' + sr.getErrors());
+            //      System.debug(LoggingLevel.ERROR, 'Failed to insert Brand__c for SC Provider ID: ' + scProviderId + '. Errors: ' + sr.getErrors());
             return null;
         }
     }

@@ -35,9 +35,32 @@
                     data={filteredInvoices}
                     columns={columns}
                     show-row-number-column
-                    hide-checkbox-column>
+                    hide-checkbox-column
+                    onrowaction={handleRowAction}>
                 </lightning-datatable>
             </div>
+
+
+
+            <template if:true={showModal}>
+                <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                    <div class="slds-modal__container" style="width: 60%; max-width: 60%;">
+                        <header class="slds-modal__header">
+                            <h2 class="slds-text-heading_medium">Invoice Preview</h2>
+                            <button class="slds-button slds-button_icon slds-modal__close" title="Close" onclick={closeModal}>
+                                <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                            </button>
+                        </header>
+                        <div class="slds-modal__content" style="height: 80vh;">
+                            <iframe src={selectedInvoiceUrl} width="100%" height="100%" frameborder="0"></iframe>
+                        </div>
+                    </div>
+                </section>
+                <div class="slds-backdrop slds-backdrop_open"></div>
+            </template>
+
+            
+
         </article>
     </div>
 </template>

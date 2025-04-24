@@ -13,108 +13,106 @@ public with sharing class WorkOrderMapController {
     tradeOptions = getTradeOptions();
     rangeOptions = getRangeOptions();
     workOrders = [
-      SELECT Id, Name, Status__c, Sites__c, Sites__r.Name
+      SELECT Id, Name, Status__c, Sites__c, Sites__r.Name , Trade__r.Name , CreatedDate
       FROM Work_Order__c
+      WHERE Work_Order_Type__c != 'Child' AND Status__c != 'Resolved'
       ORDER BY CreatedDate DESC
     ];
   }
 
   @RemoteAction
-  public static String getFilteredWorkOrders(
-    String zip,
-    String state,
-    String county,
-    String city
-  ) {
-    System.debug('STATE: ' + state);
-    System.debug('COUNTY: ' + county);
-    System.debug('CITY: ' + city);
+public static String getFilteredWorkOrders(
+  String zip,
+  String state,
+  String county,
+  String city
+) {
+  System.debug('STATE: ' + state);
+  System.debug('COUNTY: ' + county);
+  System.debug('CITY: ' + city);
 
-    if (
-      String.isBlank(zip) &&
-      String.isBlank(state) &&
-      String.isBlank(county) &&
-      String.isBlank(city)
-    ) {
-      return null;
-    }
+  // Build the query
+  String query =
+    'SELECT Id, Name, Sites__c, Sites__r.Location__Latitude__s, Sites__r.Location__Longitude__s, ' +
+    'Sites__r.Name, Trade__r.Name ' +
+    'FROM Work_Order__c WHERE Sites__c != NULL';
 
-    // Build the query
-    String query =
-      'SELECT Id, Name, Sites__c, Sites__r.Location__Latitude__s, Sites__r.Location__Longitude__s, ' +
-      'Sites__r.Name, Trade__r.Name ' +
-      'FROM Work_Order__c WHERE Sites__c != NULL';
+  List<String> conditions = new List<String>();
 
-    List<String> conditions = new List<String>();
-
-    if (String.isNotBlank(zip)) {
-      conditions.add(
-        'Sites__r.Address__PostalCode__s = \'' +
-          String.escapeSingleQuotes(zip) +
-          '\''
-      );
-    }
-    if (String.isNotBlank(state)) {
-      conditions.add(
-        'Sites__r.Address__StateCode__s = \'' +
-          String.escapeSingleQuotes(state) +
-          '\''
-      );
-    }
-    if (String.isNotBlank(county)) {
-      conditions.add(
-        'Sites__r.Address__CountryCode__s = \'' +
-          String.escapeSingleQuotes(county) +
-          '\''
-      );
-    }
-    if (String.isNotBlank(city)) {
-      conditions.add(
-        'Sites__r.Address__City__s = \'' +
-          String.escapeSingleQuotes(city) +
-          '\''
-      );
-    }
-
-    if (!conditions.isEmpty()) {
-      query += ' AND ' + String.join(conditions, ' AND ');
-    }
-
-    List<Work_Order__c> filteredWOs = Database.query(query);
-
-    // Prepare JSON response
-    Map<String, Map<String, Object>> siteMap = new Map<String, Map<String, Object>>();
-
-    for (Work_Order__c wo : filteredWOs) {
-      if (wo.Sites__c != null && wo.Sites__r != null) {
-        if (!siteMap.containsKey(wo.Sites__c)) {
-          siteMap.put(
-            wo.Sites__c,
-            new Map<String, Object>{
-              'SiteId' => wo.Sites__c,
-              'SiteName' => wo.Sites__r.Name,
-              'Latitude' => wo.Sites__r.Location__Latitude__s,
-              'Longitude' => wo.Sites__r.Location__Longitude__s,
-              'WorkOrders' => new List<Map<String, String>>()
-            }
-          );
-        }
-
-        Map<String, String> workOrder = new Map<String, String>{
-          'Id' => wo.Id,
-          'Name' => wo.Name,
-          'Trade' => wo.Trade__r.Name
-        };
-
-        ((List<Map<String, String>>) siteMap.get(wo.Sites__c).get('WorkOrders'))
-          .add(workOrder);
-      }
-    }
-
-    String response = JSON.serialize(siteMap);
-    System.debug('RESPONSE: ' + response);
-    return response;
+  if (String.isNotBlank(zip)) {
+    conditions.add(
+      'Sites__r.Address__PostalCode__s = \'' +
+        String.escapeSingleQuotes(zip) +
+        '\''
+    );
   }
+  if (String.isNotBlank(state)) {
+    conditions.add(
+      'Sites__r.Address__StateCode__s = \'' +
+        String.escapeSingleQuotes(state) +
+        '\''
+    );
+  }
+  if (String.isNotBlank(county)) {
+    conditions.add(
+      'Sites__r.Address__CountryCode__s = \'' +
+        String.escapeSingleQuotes(county) +
+        '\''
+    );
+  }
+  if (String.isNotBlank(city)) {
+    conditions.add(
+      'Sites__r.Address__City__s = \'' +
+        String.escapeSingleQuotes(city) +
+        '\''
+    );
+  }
+
+  if (!conditions.isEmpty()) {
+    query += ' AND ' + String.join(conditions, ' AND ');
+  }
+
+  // Add the query that Work_Order_Type__c not equal to 'Child'
+  query += ' AND Work_Order_Type__c != \'Child\'';
+  // Add the query that Status__c not equal to 'Resolved'
+  query += ' AND Status__c != \'Resolved\'';
+
+  // Execute the query
+  List<Work_Order__c> filteredWOs = Database.query(query);
+
+  // Prepare JSON response
+  Map<String, Map<String, Object>> siteMap = new Map<String, Map<String, Object>>();
+
+  for (Work_Order__c wo : filteredWOs) {
+    if (wo.Sites__c != null && wo.Sites__r != null) {
+      if (!siteMap.containsKey(wo.Sites__c)) {
+        siteMap.put(
+          wo.Sites__c,
+          new Map<String, Object>{
+            'SiteId' => wo.Sites__c,
+            'SiteName' => wo.Sites__r.Name,
+            'Latitude' => wo.Sites__r.Location__Latitude__s,
+            'Longitude' => wo.Sites__r.Location__Longitude__s,
+            'WorkOrders' => new List<Map<String, String>>()
+          }
+        );
+      }
+
+      Map<String, String> workOrder = new Map<String, String>{
+        'Id' => wo.Id,
+        'Name' => wo.Name,
+        'Trade' => wo.Trade__r?.Name != null ? wo.Trade__r.Name : 'Unknown'
+      };
+
+      ((List<Map<String, String>>) siteMap.get(wo.Sites__c).get('WorkOrders'))
+        .add(workOrder);
+    }
+  }
+
+  String response = JSON.serialize(siteMap);
+  System.debug('RESPONSE: ' + response);
+  return response;
+}
 
   // Fetch country picklist values
   public List<SelectOption> getCountryOptions() {

@@ -1,19 +1,32 @@
 <template>
-    <lightning-card title="Trade Management" icon-name="custom:custom14" class="container">
+    <lightning-card title="Rate Management" icon-name="custom:custom14" class="container">
         <div class="slds-p-around_medium">
-            <template for:each={trades} for:item="trade">
-                <div key={trade.Id} class="trade-item">
-                    <lightning-input 
-                        type="checkbox" 
-                        label={trade.Name} 
-                        data-id={trade.Id}
-                        checked={trade.isChecked}  
-                        onchange={handleCheckboxChange}>
-                    </lightning-input>
-                </div>
-            </template>
+            <div class="slds-grid slds-wrap slds-gutters_small">
+                <template for:each={trades} for:item="trade">
+                    <div key={trade.Id} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 trade-item">
+                        <lightning-input 
+                            type="checkbox" 
+                            label={trade.Name} 
+                            data-id={trade.Id}
+                            checked={trade.isChecked}  
+                            onchange={handleCheckboxChange}>
+                        </lightning-input>
+                    </div>
+                </template>
+            </div>
 
-            <div class="button-group">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                <lightning-combobox
+                    name="corporateSelect"
+                    label="Select Corporate"
+                    placeholder="Select Corporate"
+                    options={corporateOptions}
+                    value={selectedCorpId}
+                    onchange={handleCorporateChange}>
+                </lightning-combobox>
+            </div>
+            
+            <div class="slds-m-top_medium slds-text-align_right">
                 <lightning-button label="Add Rate" variant="brand" onclick={handleAddTrade}></lightning-button>
                 <lightning-button label="Clear Selection" variant="neutral" onclick={clearCheckboxes} class="slds-m-left_small"></lightning-button>
             </div>
@@ -22,41 +35,31 @@
 
     <!-- Modal -->
     <template if:true={showModal}>
-        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open custom-modal">
             <div class="slds-modal__container">
                 
-                <!-- Dynamic trade name as modal header -->
                 <header class="slds-modal__header">
                     <h2 class="slds-text-heading_medium">{selectedTradeName}</h2>
                 </header>
 
-                <!-- <div class="slds-modal__content slds-p-around_medium">
-                    <template for:each={currencyFields} for:item="field">
-                        <lightning-input key={field.apiName}
-                                         label={field.label}
-                                         data-field={field.apiName}
-                                         type="number"
-                                         onchange={handleCurrencyChange}>
-                        </lightning-input>
-                    </template>
-                </div> -->
-
                 <div class="slds-modal__content slds-p-around_medium">
-                    <template for:each={currencyFields} for:item="field">
-                        <div key={field.apiName} class="slds-form-element">
-                            <label class="slds-form-element__label">{field.label}</label>
-                            <div class="slds-input-has-fixed-addon">
-                                <span class="slds-form-element__addon">$</span>
-                                <lightning-input data-field={field.apiName}
-                                                 type="number"
-                                                 class="slds-input"
-                                                 onchange={handleCurrencyChange}>
-                                </lightning-input>
+                    <div class="slds-grid slds-wrap slds-gutters_medium">
+                        <template for:each={currencyFields} for:item="field">
+                            <div key={field.apiName} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                <div class="slds-form-element">
+                                    <label class="slds-form-element__label">{field.label}</label>
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                        <span style="font-weight: bold;">$</span>
+                                        <input type="number"
+                                               data-field={field.apiName}
+                                               onchange={handleCurrencyChange}
+                                               style="border: none; border-bottom: 1px solid #ccc; padding: 0.4rem 0.5rem; width: 100%; outline: none; background: transparent;" />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </template>
+                        </template>
+                    </div>
                 </div>
-                
 
                 <footer class="slds-modal__footer">
                     <lightning-button label="Cancel" onclick={closeModal}></lightning-button>

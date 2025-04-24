@@ -133,6 +133,7 @@ public static List<VendorWrapper> getActiveVendorsForWorkOrder(Id workOrderId) {
             Classification__c,
             Issue__c,
             NTE__c,
+            Original_NTE__c,
             Request_By_Person__c
           FROM Work_Order__c
           WHERE Id = :workOrderId
@@ -170,10 +171,19 @@ public static List<VendorWrapper> getActiveVendorsForWorkOrder(Id workOrderId) {
       List<VendorWO__c> vendorWOs = new List<VendorWO__c>();
       Map<Id, Id> vendorToChildWOMap = new Map<Id, Id>();
 
+      Id recordTypeId = [
+                SELECT Id 
+                FROM RecordType 
+                WHERE DeveloperName = 'Child_Work_Order' 
+                  AND SObjectType = 'Work_Order__c' 
+                LIMIT 1
+            ].Id;
+
       System.debug('Creating child work orders and vendor WO records');
       for (Vendor__c vendor : vendors) {
         // Create child work order
         Work_Order__c child = new Work_Order__c(
+            RecordTypeId = recordTypeId,
           ParentWO__c = parentWorkOrder.Id,
           Vendor__c = vendor.Id,
           Trade__c = parentWorkOrder.Trade__c,
@@ -184,6 +194,7 @@ public static List<VendorWrapper> getActiveVendorsForWorkOrder(Id workOrderId) {
           Classification__c = parentWorkOrder.Classification__c,
           Issue__c = parentWorkOrder.Issue__c,
           NTE__c = parentWorkOrder.NTE__c,
+          Original_NTE__c = parentWorkOrder.Original_NTE__c,
           Request_By_Person__c = parentWorkOrder.Request_By_Person__c,
           Status__c = 'Pending Vendor Approval',
           Work_Order_Type__c = 'Child'
@@ -284,9 +295,7 @@ public static List<VendorWrapper> getActiveVendorsForWorkOrder(Id workOrderId) {
       String result =
         'Successfully assigned ' +
         vendors.size() +
-        ' vendors. Created ' +
-        childWorkOrders.size() +
-        ' child work orders.';
+        ' vendors.';
       System.debug('assignVendorToWorkOrder completed successfully: ' + result);
       return result;
     } catch (Exception e) {
@@ -414,7 +423,7 @@ public static List<VendorWrapper> getActiveVendorsForWorkOrder(Id workOrderId) {
                 'WOAssignTOVendorNotification',
                 new List<Id>(userIdsToNotify),
                 workOrder.Id,
-                'Work Order ' + workOrder.Name + ' has been assigned by '+ UserInfo.getName(),
+                'Work Order ' + workOrder.WorkOrderNumber__c + ' has been assigned to a vendor.',
                 'Work Order Assignment'
             );
 
